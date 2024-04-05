@@ -8,7 +8,7 @@ import (
 )
 
 func TestCorrectorIsCorrect(t *testing.T) {
-	sql := "SELECT * FROM path:../../testdata/example.csv AS g WHERE g.Area = A100100"
+	sql := "SELECT * FROM path:../../testdata/example.csv AS g WHERE g.Area = 'A100100'"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
 
@@ -73,3 +73,34 @@ func TestCorrectorInvalidAsChuck(t *testing.T) {
 
 	assert.True(t, errors.Is(errs[0], InvalidAsChunk))
 }
+
+func TestInCorrectorWhereClause(t *testing.T) {
+	sql := "SELECT      *      FROM path:../../testdata/example.csv As g WHERE a b"
+
+	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	assert.Equal(t, 1, len(errs))
+
+	assert.True(t, errors.Is(errs[0], InvalidWhereClause))
+}
+
+func TestInCorrectorWhereClauseOperator(t *testing.T) {
+	sql := "SELECT      *      FROM path:../../testdata/example.csv As g WHERE a & 'b'"
+
+	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	assert.Equal(t, 1, len(errs))
+
+	assert.True(t, errors.Is(errs[0], InvalidWhereClause))
+}
+
+func TestInCorrectorWhereClauseValue(t *testing.T) {
+	sql := "SELECT      *      FROM path:../../testdata/example.csv As g WHERE a = 'b"
+
+	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	assert.Equal(t, 1, len(errs))
+
+	assert.True(t, errors.Is(errs[0], InvalidValueChuck))
+}
+
