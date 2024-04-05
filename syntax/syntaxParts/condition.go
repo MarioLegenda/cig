@@ -10,8 +10,6 @@ type Item interface {
 	Value() string
 	Next() Item
 	Prev() Item
-	SetNext(item Item)
-	SetPrev(item Item)
 }
 
 func (i *item) Value() string {
@@ -24,14 +22,6 @@ func (i *item) Next() Item {
 
 func (i *item) Prev() Item {
 	return i.prev
-}
-
-func (i *item) SetNext(item Item) {
-	i.next = item
-}
-
-func (i *item) SetPrev(item Item) {
-	i.prev = item
 }
 
 func NewItem(value string) Item {
