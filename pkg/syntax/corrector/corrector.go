@@ -1,8 +1,8 @@
 package corrector
 
 import (
-	"cig/syntax/operators"
-	"cig/syntax/splitter"
+	"cig/pkg/syntax/operators"
+	"cig/pkg/syntax/splitter"
 	"errors"
 	"fmt"
 	"os"
