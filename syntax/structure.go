@@ -4,18 +4,19 @@ import (
 	"cig/syntax/corrector"
 	"cig/syntax/splitter"
 	"cig/syntax/syntaxParts"
-	"fmt"
 	"strings"
 )
 
 type structure struct {
-	column syntaxParts.SyntaxType
-	fileDb syntaxParts.SyntaxType
+	column    syntaxParts.SyntaxType
+	fileDb    syntaxParts.SyntaxType
+	condition syntaxParts.Condition
 }
 
 type Structure interface {
 	Column() syntaxParts.SyntaxType
 	FileDB() syntaxParts.SyntaxType
+	Condition() syntaxParts.Condition
 }
 
 func (s structure) Column() syntaxParts.SyntaxType {
@@ -24,6 +25,10 @@ func (s structure) Column() syntaxParts.SyntaxType {
 
 func (s structure) FileDB() syntaxParts.SyntaxType {
 	return s.fileDb
+}
+
+func (s structure) Condition() syntaxParts.Condition {
+	return s.condition
 }
 
 func NewStructure(sql string) Result[Structure] {
@@ -37,11 +42,10 @@ func NewStructure(sql string) Result[Structure] {
 	f, alias := resolveFiles(s.Chunks()[3], s.Chunks()[5])
 
 	syntaxStructure := structure{
-		column: syntaxParts.NewColumn(columns),
-		fileDb: syntaxParts.NewFileDB(f, alias),
+		column:    syntaxParts.NewColumn(columns),
+		fileDb:    syntaxParts.NewFileDB(f, alias),
+		condition: resolveWhereClause(s.Chunks()[6:]),
 	}
-
-	resolveWhereClause(s.Chunks()[6:])
 
 	return NewResult[Structure](syntaxStructure, []error{})
 }
@@ -60,6 +64,6 @@ func resolveFiles(path, alias string) (string, string) {
 	return p[1], alias
 }
 
-func resolveWhereClause(chunks []string) {
-	fmt.Println(chunks)
+func resolveWhereClause(chunks []string) syntaxParts.Condition {
+	return syntaxParts.NewCondition(chunks[1], chunks[2], chunks[3])
 }
