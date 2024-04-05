@@ -1,7 +1,7 @@
 package corrector
 
 import (
-	"cig/syntax/splitter"
+	"cig/pkg/syntax/splitter"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -103,4 +103,3 @@ func TestInCorrectorWhereClauseValue(t *testing.T) {
 
 	assert.True(t, errors.Is(errs[0], InvalidValueChuck))
 }
-

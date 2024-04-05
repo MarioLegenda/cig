@@ -1,33 +1,33 @@
 package syntax
 
 import (
-	"cig/syntax/corrector"
-	"cig/syntax/splitter"
-	"cig/syntax/syntaxParts"
+	"cig/pkg/syntax/corrector"
+	"cig/pkg/syntax/splitter"
+	syntaxParts2 "cig/pkg/syntax/syntaxParts"
 	"strings"
 )
 
 type structure struct {
-	column    syntaxParts.SyntaxType
-	fileDb    syntaxParts.SyntaxType
-	condition syntaxParts.Condition
+	column    syntaxParts2.SyntaxType
+	fileDb    syntaxParts2.SyntaxType
+	condition syntaxParts2.Condition
 }
 
 type Structure interface {
-	Column() syntaxParts.SyntaxType
-	FileDB() syntaxParts.SyntaxType
-	Condition() syntaxParts.Condition
+	Column() syntaxParts2.SyntaxType
+	FileDB() syntaxParts2.SyntaxType
+	Condition() syntaxParts2.Condition
 }
 
-func (s structure) Column() syntaxParts.SyntaxType {
+func (s structure) Column() syntaxParts2.SyntaxType {
 	return s.column
 }
 
-func (s structure) FileDB() syntaxParts.SyntaxType {
+func (s structure) FileDB() syntaxParts2.SyntaxType {
 	return s.fileDb
 }
 
-func (s structure) Condition() syntaxParts.Condition {
+func (s structure) Condition() syntaxParts2.Condition {
 	return s.condition
 }
 
@@ -42,8 +42,8 @@ func NewStructure(sql string) Result[Structure] {
 	f, alias := resolveFiles(s.Chunks()[3], s.Chunks()[5])
 
 	syntaxStructure := structure{
-		column:    syntaxParts.NewColumn(columns),
-		fileDb:    syntaxParts.NewFileDB(f, alias),
+		column:    syntaxParts2.NewColumn(columns),
+		fileDb:    syntaxParts2.NewFileDB(f, alias),
 		condition: resolveWhereClause(s.Chunks()[6:]),
 	}
 
@@ -64,6 +64,6 @@ func resolveFiles(path, alias string) (string, string) {
 	return p[1], alias
 }
 
-func resolveWhereClause(chunks []string) syntaxParts.Condition {
-	return syntaxParts.NewCondition(chunks[1], chunks[2], chunks[3])
+func resolveWhereClause(chunks []string) syntaxParts2.Condition {
+	return syntaxParts2.NewCondition(chunks[1], chunks[2], chunks[3])
 }

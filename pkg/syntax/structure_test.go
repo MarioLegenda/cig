@@ -1,7 +1,7 @@
 package syntax
 
 import (
-	"cig/syntax/syntaxParts"
+	"cig/pkg/syntax/syntaxParts"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
