@@ -1,6 +1,7 @@
 package corrector
 
 import (
+	"cig/syntax/operators"
 	"cig/syntax/splitter"
 	"errors"
 	"fmt"
@@ -14,6 +15,8 @@ var InvalidAsChunk = errors.New("Expected 'as', got something else.")
 var InvalidFromChunk = errors.New("Expected 'from', got something else.")
 var InvalidFilePathChunk = errors.New("Expected 'path:path_to_file' but did not get the path: part")
 var InvalidFilePath = errors.New("Invalid file path.")
+var InvalidWhereClause = errors.New("Invalid WHERE clause.")
+var InvalidValueChuck = errors.New("Invalid value chunk.")
 
 func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 	chunks := s.Chunks()
@@ -59,5 +62,54 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 		errs = append(errs, InvalidAsChunk)
 	}
 
+	whereClause := chunks[6:]
+
+	if len(whereClause) != 0 {
+		if len(whereClause) < 4 {
+			errs = append(errs, fmt.Errorf("Expected at least a single condition for WHERE clause but got something else: %w", InvalidWhereClause))
+			return errs
+		}
+
+		where := whereClause[0]
+		operator := whereClause[2]
+		value := whereClause[3]
+
+		if strings.ToLower(where) != "where" {
+			errs = append(errs, fmt.Errorf("Expected WHERE, got %s: %w", whereClause[0], InvalidWhereClause))
+		}
+
+		if err := checkOperator(operator); err != nil {
+			errs = append(errs, err)
+		}
+
+		if err := checkValue(value); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
 	return errs
+}
+
+func checkOperator(op string) error {
+	found := false
+	for _, v := range operators.Operators {
+		if v == op {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("Expected one of valid operators %s, got %s: %w", strings.Join(operators.Operators, ","), op, InvalidWhereClause)
+	}
+
+	return nil
+}
+
+func checkValue(v string) error {
+	if v[0] != '\'' || v[len(v)-1] != '\'' {
+		return fmt.Errorf("Invalid string comparison value. Comparison values should be in enclosed in single quotes: %w", InvalidValueChuck)
+	}
+
+	return nil
 }

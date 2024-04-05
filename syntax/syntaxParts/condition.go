@@ -1,9 +1,10 @@
 package syntaxParts
 
 type item struct {
-	value string
-	next  Item
-	prev  Item
+	value        string
+	compoundHead Item
+	next         Item
+	prev         Item
 }
 
 type Item interface {

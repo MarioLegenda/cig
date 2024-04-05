@@ -2,8 +2,9 @@ package syntax
 
 import (
 	"cig/syntax/syntaxParts"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStructureValid(t *testing.T) {
