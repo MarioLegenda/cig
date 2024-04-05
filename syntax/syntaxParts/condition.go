@@ -1,34 +1,58 @@
 package syntaxParts
 
-type item struct {
+type condition struct {
 	value        string
-	compoundHead Item
-	next         Item
-	prev         Item
+	column       string
+	operator     string
+	compoundHead Condition
+	next         Condition
+	prev         Condition
 }
 
-type Item interface {
+type Condition interface {
 	Value() string
-	Next() Item
-	Prev() Item
+	Next() Condition
+	Prev() Condition
+	SetNext(item Condition)
+	SetPrev(item Condition)
+	Column() string
+	Operator() string
 }
 
-func (i *item) Value() string {
+func (i *condition) Value() string {
 	return i.value
 }
 
-func (i *item) Next() Item {
+func (i *condition) Next() Condition {
 	return i.next
 }
 
-func (i *item) Prev() Item {
+func (i *condition) Prev() Condition {
 	return i.prev
 }
 
-func NewItem(value string) Item {
-	return &item{
-		value: value,
-		next:  nil,
-		prev:  nil,
+func (i *condition) SetNext(item Condition) {
+	i.next = item
+}
+
+func (i *condition) SetPrev(item Condition) {
+	i.prev = item
+}
+
+func (i *condition) Column() string {
+	return i.column
+}
+
+func (i *condition) Operator() string {
+	return i.operator
+}
+
+func NewCondition(column, operator, value string) Condition {
+	return &condition{
+		value:    value,
+		column:   column,
+		operator: operator,
+		next:     nil,
+		prev:     nil,
 	}
 }

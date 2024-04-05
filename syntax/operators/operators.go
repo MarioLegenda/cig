@@ -7,11 +7,14 @@ const GreaterThanOperator = ">"
 const GreaterThanOrEqualOperator = ">="
 const LessThanOrEqualOperator = "<="
 
+const AndOperator = "and"
+const OrOperator = "or"
+
 var Operators = []string{
-	EqualOperator, 
-	UnEqualOperator, 
-	LessThanOperator, 
-	LessThanOrEqualOperator, 
-	GreaterThanOperator, 
+	EqualOperator,
+	UnEqualOperator,
+	LessThanOperator,
+	LessThanOrEqualOperator,
+	GreaterThanOperator,
 	GreaterThanOrEqualOperator,
 }
