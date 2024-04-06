@@ -1,10 +1,10 @@
 package db
 
 import (
-	"cig/pkg/db/fs"
-	"cig/pkg/result"
-	"cig/pkg/syntax"
 	"fmt"
+	"github.com/MarioLegenda/cig/pkg/db/fs"
+	"github.com/MarioLegenda/cig/pkg/result"
+	"github.com/MarioLegenda/cig/pkg/syntax"
 	"io"
 	"os"
 )

@@ -1,9 +1,9 @@
 package pkg
 
 import (
-	"cig/pkg/db"
-	"cig/pkg/result"
-	"cig/pkg/syntax"
+	"github.com/MarioLegenda/cig/pkg/db"
+	"github.com/MarioLegenda/cig/pkg/result"
+	"github.com/MarioLegenda/cig/pkg/syntax"
 )
 
 type Cig interface {

@@ -1,8 +1,8 @@
 package corrector
 
 import (
-	"cig/pkg/syntax/splitter"
 	"errors"
+	"github.com/MarioLegenda/cig/pkg/syntax/splitter"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

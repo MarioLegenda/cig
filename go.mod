@@ -1,4 +1,4 @@
-module github.com/MarioLegenda/cig/pkg
+module github.com/MarioLegenda/cig
 
 go 1.22.1
 

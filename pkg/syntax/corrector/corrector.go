@@ -1,10 +1,10 @@
 package corrector
 
 import (
-	"cig/pkg/syntax/operators"
-	"cig/pkg/syntax/splitter"
 	"errors"
 	"fmt"
+	"github.com/MarioLegenda/cig/pkg/syntax/operators"
+	"github.com/MarioLegenda/cig/pkg/syntax/splitter"
 	"os"
 	"strings"
 )
