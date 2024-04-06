@@ -2,29 +2,34 @@ package pkg
 
 import (
 	"cig/pkg/db"
+	"cig/pkg/result"
 	"cig/pkg/syntax"
 )
 
 type Cig interface {
-	Run(sql string) (map[string]string, []error)
+	Run(sql string) result.Result[map[string]string]
+	Close() result.Result[any]
 }
 
 type cig struct {
+	db db.DB
 }
 
-func (c cig) Run(sql string) (map[string]string, []error) {
+func (c cig) Run(sql string) result.Result[map[string]string] {
 	res := syntax.NewStructure(sql)
 	if res.HasErrors() {
-		return nil, res.Errors()
+		return result.NewResult[map[string]string](nil, res.Errors())
 	}
 
-	dbRunner := db.New(res.Result())
+	c.db.Run(res.Result())
 
-	dbRunner.Run()
+	return result.NewResult[map[string]string](nil, nil)
+}
 
-	return nil, nil
+func (c cig) Close() result.Result[any] {
+	return c.db.Close()
 }
 
 func New() Cig {
-	return cig{}
+	return cig{db: db.New()}
 }

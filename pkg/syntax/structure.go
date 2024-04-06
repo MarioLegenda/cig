@@ -1,6 +1,7 @@
 package syntax
 
 import (
+	"cig/pkg/result"
 	"cig/pkg/syntax/corrector"
 	"cig/pkg/syntax/splitter"
 	syntaxParts2 "cig/pkg/syntax/syntaxParts"
@@ -31,11 +32,11 @@ func (s structure) Condition() syntaxParts2.Condition {
 	return s.condition
 }
 
-func NewStructure(sql string) Result[Structure] {
+func NewStructure(sql string) result.Result[Structure] {
 	s := splitter.NewSplitter(sql)
 	errs := corrector.IsShallowSyntaxCorrect(s)
 	if len(errs) != 0 {
-		return NewResult[Structure](nil, errs)
+		return result.NewResult[Structure](nil, errs)
 	}
 
 	columns := splitColumns(s.Chunks()[1])
@@ -47,7 +48,7 @@ func NewStructure(sql string) Result[Structure] {
 		condition: resolveWhereClause(s.Chunks()[6:]),
 	}
 
-	return NewResult[Structure](syntaxStructure, nil)
+	return result.NewResult[Structure](syntaxStructure, nil)
 }
 
 func splitColumns(c string) []string {
