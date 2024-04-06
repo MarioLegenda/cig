@@ -1,34 +1,34 @@
 package syntax
 
 import (
-	"cig/pkg/result"
-	"cig/pkg/syntax/corrector"
-	"cig/pkg/syntax/splitter"
-	syntaxParts2 "cig/pkg/syntax/syntaxParts"
+	"github.com/MarioLegenda/cig/pkg/result"
+	"github.com/MarioLegenda/cig/pkg/syntax/corrector"
+	"github.com/MarioLegenda/cig/pkg/syntax/splitter"
+	"github.com/MarioLegenda/cig/pkg/syntax/syntaxParts"
 	"strings"
 )
 
 type structure struct {
-	column    syntaxParts2.Column
-	fileDb    syntaxParts2.FileDB
-	condition syntaxParts2.Condition
+	column    syntaxParts.Column
+	fileDb    syntaxParts.FileDB
+	condition syntaxParts.Condition
 }
 
 type Structure interface {
-	Column() syntaxParts2.Column
-	FileDB() syntaxParts2.FileDB
-	Condition() syntaxParts2.Condition
+	Column() syntaxParts.Column
+	FileDB() syntaxParts.FileDB
+	Condition() syntaxParts.Condition
 }
 
-func (s structure) Column() syntaxParts2.Column {
+func (s structure) Column() syntaxParts.Column {
 	return s.column
 }
 
-func (s structure) FileDB() syntaxParts2.FileDB {
+func (s structure) FileDB() syntaxParts.FileDB {
 	return s.fileDb
 }
 
-func (s structure) Condition() syntaxParts2.Condition {
+func (s structure) Condition() syntaxParts.Condition {
 	return s.condition
 }
 
@@ -43,8 +43,8 @@ func NewStructure(sql string) result.Result[Structure] {
 	f, alias := resolveFiles(s.Chunks()[3], s.Chunks()[5])
 
 	syntaxStructure := structure{
-		column:    syntaxParts2.NewColumn(columns),
-		fileDb:    syntaxParts2.NewFileDB(f, alias),
+		column:    syntaxParts.NewColumn(columns),
+		fileDb:    syntaxParts.NewFileDB(f, alias),
 		condition: resolveWhereClause(s.Chunks()[6:]),
 	}
 
@@ -65,6 +65,6 @@ func resolveFiles(path, alias string) (string, string) {
 	return p[1], alias
 }
 
-func resolveWhereClause(chunks []string) syntaxParts2.Condition {
-	return syntaxParts2.NewCondition(chunks[1], chunks[2], chunks[3])
+func resolveWhereClause(chunks []string) syntaxParts.Condition {
+	return syntaxParts.NewCondition(chunks[1], chunks[2], chunks[3])
 }
