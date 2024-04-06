@@ -8,22 +8,22 @@ import (
 )
 
 type structure struct {
-	column    syntaxParts2.SyntaxType
-	fileDb    syntaxParts2.SyntaxType
+	column    syntaxParts2.Column
+	fileDb    syntaxParts2.FileDB
 	condition syntaxParts2.Condition
 }
 
 type Structure interface {
-	Column() syntaxParts2.SyntaxType
-	FileDB() syntaxParts2.SyntaxType
+	Column() syntaxParts2.Column
+	FileDB() syntaxParts2.FileDB
 	Condition() syntaxParts2.Condition
 }
 
-func (s structure) Column() syntaxParts2.SyntaxType {
+func (s structure) Column() syntaxParts2.Column {
 	return s.column
 }
 
-func (s structure) FileDB() syntaxParts2.SyntaxType {
+func (s structure) FileDB() syntaxParts2.FileDB {
 	return s.fileDb
 }
 
@@ -47,7 +47,7 @@ func NewStructure(sql string) Result[Structure] {
 		condition: resolveWhereClause(s.Chunks()[6:]),
 	}
 
-	return NewResult[Structure](syntaxStructure, []error{})
+	return NewResult[Structure](syntaxStructure, nil)
 }
 
 func splitColumns(c string) []string {

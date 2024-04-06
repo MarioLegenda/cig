@@ -1,25 +1,23 @@
 package syntax
 
 import (
-	"cig/pkg/syntax/syntaxParts"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStructureValid(t *testing.T) {
-	sql := "SELECT * FROM path:../testdata/example.csv AS g WHERE g.Area = 'A100100'"
+	sql := "SELECT * FROM path:../testdata/example.csv AS e WHERE e.Industry_aggregation_NZSIOC = 'Level 1'"
 
 	res := NewStructure(sql)
 
 	assert.Equal(t, false, res.HasErrors())
-	assert.Equal(t, res.Result().Column().Type(), syntaxParts.ColumnType)
-	assert.Equal(t, res.Result().FileDB().Type(), syntaxParts.FileDBType)
+	assert.Nil(t, res.Errors())
 
 	condition := res.Result().Condition()
 
-	assert.Equal(t, condition.Column(), "g.Area")
-	assert.Equal(t, condition.Value(), "'A100100'")
+	assert.Equal(t, condition.Column(), "e.Industry_aggregation_NZSIOC")
+	assert.Equal(t, condition.Value(), "'Level 1'")
 	assert.Equal(t, condition.Operator(), "=")
 
 	assert.Nil(t, condition.Next())
