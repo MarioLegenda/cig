@@ -18,10 +18,6 @@ func (f fileDb) Alias() string {
 	return f.alias
 }
 
-func (f fileDb) Type() string {
-	return FileDBType
-}
-
-func NewFileDB(path, alias string) SyntaxType {
+func NewFileDB(path, alias string) FileDB {
 	return fileDb{path: path, alias: alias}
 }

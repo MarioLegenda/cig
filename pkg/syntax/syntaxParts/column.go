@@ -23,10 +23,6 @@ func (c column) ShouldReturnAll() bool {
 	return len(c.columns) == 1 && c.columns[0] == "*"
 }
 
-func (c column) Type() string {
-	return ColumnType
-}
-
-func NewColumn(columns []string) SyntaxType {
+func NewColumn(columns []string) Column {
 	return column{columns: columns}
 }

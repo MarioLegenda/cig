@@ -108,7 +108,7 @@ func checkOperator(op string) error {
 
 func checkValue(v string) error {
 	if v[0] != '\'' || v[len(v)-1] != '\'' {
-		return fmt.Errorf("Invalid string comparison value. Comparison values should be in enclosed in single quotes: %w", InvalidValueChuck)
+		return fmt.Errorf("Invalid string comparison value. Comparison values should be enclosed in single quotes: %w", InvalidValueChuck)
 	}
 
 	return nil
