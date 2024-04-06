@@ -71,6 +71,7 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 		}
 
 		where := whereClause[0]
+		column := whereClause[1]
 		operator := whereClause[2]
 		value := whereClause[3]
 
@@ -78,11 +79,15 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 			errs = append(errs, fmt.Errorf("Expected WHERE, got %s: %w", whereClause[0], InvalidWhereClause))
 		}
 
+		if err := checkIsQuoteEnclosed(column, "column"); err != nil {
+			errs = append(errs, err)
+		}
+
 		if err := checkOperator(operator); err != nil {
 			errs = append(errs, err)
 		}
 
-		if err := checkValue(value); err != nil {
+		if err := checkIsQuoteEnclosed(value, "value"); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -106,9 +111,9 @@ func checkOperator(op string) error {
 	return nil
 }
 
-func checkValue(v string) error {
+func checkIsQuoteEnclosed(v, t string) error {
 	if v[0] != '\'' || v[len(v)-1] != '\'' {
-		return fmt.Errorf("Invalid string comparison value. Comparison values should be enclosed in single quotes: %w", InvalidValueChuck)
+		return fmt.Errorf("Invalid %s value. Comparison values should be enclosed in single quotes: %w", t, InvalidValueChuck)
 	}
 
 	return nil
