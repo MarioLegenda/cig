@@ -3,7 +3,6 @@ package corrector
 import (
 	"cig/pkg/syntax/splitter"
 	"errors"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -99,8 +98,6 @@ func TestInCorrectorWhereClauseValue(t *testing.T) {
 	sql := "SELECT      *      FROM path:../../testdata/example.csv As g WHERE 'a' = 'b"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
-
-	fmt.Println(errs)
 
 	assert.Equal(t, 1, len(errs))
 

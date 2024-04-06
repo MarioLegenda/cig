@@ -1,4 +1,4 @@
-package syntax
+package result
 
 type result[T any] struct {
 	errs   []error
@@ -24,5 +24,9 @@ func (r result[T]) Result() T {
 }
 
 func NewResult[T any](res T, errs []error) Result[T] {
+	if len(errs) == 0 || errs == nil {
+		return result[T]{errs: nil, result: res}
+	}
+
 	return result[T]{errs: errs, result: res}
 }
