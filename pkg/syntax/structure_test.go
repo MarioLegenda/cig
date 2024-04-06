@@ -16,9 +16,14 @@ func TestStructureValid(t *testing.T) {
 
 	condition := res.Result().Condition()
 
-	assert.Equal(t, condition.Column(), "'e.Industry_aggregation_NZSIOC'")
-	assert.Equal(t, condition.Value(), "'Level 1'")
-	assert.Equal(t, condition.Operator(), "=")
+	assert.Equal(t, condition.Column().Original(), "'e.Industry_aggregation_NZSIOC'")
+	assert.Equal(t, condition.Column().Alias(), "e")
+	assert.Equal(t, condition.Column().Column(), "Industry_aggregation_NZSIOC")
+
+	assert.Equal(t, condition.Value().Original(), "'Level 1'")
+	assert.Equal(t, condition.Value().Value(), "Level 1")
+	
+	assert.Equal(t, condition.Operator().Original(), "=")
 
 	assert.Nil(t, condition.Next())
 	assert.Nil(t, condition.Prev())
