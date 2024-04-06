@@ -7,7 +7,7 @@ import (
 )
 
 func TestSplitterWithValidSpaces(t *testing.T) {
-	sql := "SELECT * FROM path:testdata/example.csv AS g WHERE g.Area = A100100"
+	sql := "SELECT * FROM path:testdata/example.csv AS g WHERE 'g.Area' = 'A100100'"
 	s := NewSplitter(sql)
 
 	assert.Equal(t, len(s.Chunks()), 10)
@@ -15,7 +15,7 @@ func TestSplitterWithValidSpaces(t *testing.T) {
 }
 
 func TestSplitterWithInValidSpaces(t *testing.T) {
-	sql := "SELECT     *     FROM     path:testdata/example.csv      WHERE          g.Area =            A100100"
+	sql := "SELECT     *     FROM     path:testdata/example.csv      WHERE          'g.Area' =            'A100100'"
 	s := NewSplitter(sql)
 
 	assert.Equal(t, len(s.Chunks()), 8)

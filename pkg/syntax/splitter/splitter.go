@@ -34,13 +34,14 @@ func removeWhitespace(s string) string {
 	for i := 0; i < len(sql); i++ {
 		b := sql[i]
 
-		if b == 39 {
+		if b == 39 && !quoteMode {
+			whitespaceMode = false
 			quoteMode = true
 			base += string(b)
 			continue
 		}
 
-		if quoteMode {
+		if b != 39 && quoteMode {
 			base += string(b)
 			continue
 		}

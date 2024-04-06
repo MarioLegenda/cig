@@ -3,12 +3,13 @@ package corrector
 import (
 	"cig/pkg/syntax/splitter"
 	"errors"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestCorrectorIsCorrect(t *testing.T) {
-	sql := "SELECT * FROM path:../../testdata/example.csv AS g WHERE g.Area = 'A100100'"
+	sql := "SELECT * FROM path:../../testdata/example.csv AS g WHERE 'g.Area' = 'A100100'"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
 
@@ -75,7 +76,7 @@ func TestCorrectorInvalidAsChuck(t *testing.T) {
 }
 
 func TestInCorrectorWhereClause(t *testing.T) {
-	sql := "SELECT      *      FROM path:../../testdata/example.csv As g WHERE a b"
+	sql := "SELECT      *      FROM path:../../testdata/example.csv As g WHERE 'a' b"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
 
@@ -85,7 +86,7 @@ func TestInCorrectorWhereClause(t *testing.T) {
 }
 
 func TestInCorrectorWhereClauseOperator(t *testing.T) {
-	sql := "SELECT      *      FROM path:../../testdata/example.csv As g WHERE a & 'b'"
+	sql := "SELECT      *      FROM path:../../testdata/example.csv As g WHERE 'a' & 'b'"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
 
@@ -95,9 +96,11 @@ func TestInCorrectorWhereClauseOperator(t *testing.T) {
 }
 
 func TestInCorrectorWhereClauseValue(t *testing.T) {
-	sql := "SELECT      *      FROM path:../../testdata/example.csv As g WHERE a = 'b"
+	sql := "SELECT      *      FROM path:../../testdata/example.csv As g WHERE 'a' = 'b"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	fmt.Println(errs)
 
 	assert.Equal(t, 1, len(errs))
 
