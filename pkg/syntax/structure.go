@@ -66,5 +66,14 @@ func resolveFiles(path, alias string) (string, string) {
 }
 
 func resolveWhereClause(chunks []string) syntaxParts.Condition {
-	return syntaxParts.NewCondition(chunks[1], chunks[2], chunks[3])
+	originalColumn := chunks[1]
+	split := strings.Split(originalColumn[1:len(originalColumn)-1], ".")
+
+	return syntaxParts.NewCondition(
+		syntaxParts.NewConditionColumn(split[0], split[1],
+			originalColumn,
+		),
+		syntaxParts.NewConditionOperator(chunks[2], chunks[2]),
+		syntaxParts.NewConditionValue(chunks[3][1:len(chunks[3])-1], chunks[3]),
+	)
 }
