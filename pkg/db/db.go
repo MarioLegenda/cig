@@ -33,9 +33,8 @@ func (d *db) Run(s syntax.Structure) result.Result[map[string]string] {
 		return result.NewResult[map[string]string](nil, errs)
 	}
 
-	condition := s.Condition()
-
-	fmt.Println(condition.Column(), condition.Operator(), condition.Value())
+	if s.Condition() != nil {
+	}
 
 	return result.NewResult[map[string]string](nil, nil)
 }
