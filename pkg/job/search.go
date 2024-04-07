@@ -38,7 +38,6 @@ func Search(columnPosition int, metadata columnMetadata, value string, f io.Read
 			default:
 				lines, err := lineReader()
 				if err != nil {
-					fmt.Println("sent error", err)
 					writer <- result.NewResult[SearchResult](nil, []error{
 						fmt.Errorf("Error in job %d while reading from the file: %w", id, err),
 					})
@@ -46,6 +45,8 @@ func Search(columnPosition int, metadata columnMetadata, value string, f io.Read
 				}
 
 				if len(lines) == 0 {
+					writer <- result.NewResult[SearchResult](results, nil)
+
 					return
 				}
 
@@ -60,7 +61,6 @@ func Search(columnPosition int, metadata columnMetadata, value string, f io.Read
 					}
 
 					results = append(results, singleResult)
-
 				}
 			}
 		}

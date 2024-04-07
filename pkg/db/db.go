@@ -21,7 +21,6 @@ type metadataColumn struct {
 type fileMetadata struct {
 	columns      []metadataColumn
 	originalPath string
-	file         io.ReadCloser
 }
 
 type db struct {
@@ -37,7 +36,13 @@ func (d *db) Run(s syntax.Structure) result.Result[job2.SearchResult] {
 	file := s.FileDB()
 	errs := make([]error, 0)
 
-	if err := openFiles(file.Alias(), file.Path(), d); err != nil {
+	fileHandler, err := os.Open(file.Path())
+	if err != nil {
+		errs = append(errs, fmt.Errorf("Opening file %s failed with error: %w", file.Path(), err))
+		return result.NewResult[job2.SearchResult](nil, errs)
+	}
+
+	if err := assignColumns(file.Alias(), file.Path(), d); err != nil {
 		errs = append(errs, fmt.Errorf("Opening file %s failed with error: %w", file.Path(), err))
 		return result.NewResult[job2.SearchResult](nil, errs)
 	}
@@ -64,7 +69,8 @@ func (d *db) Run(s syntax.Structure) result.Result[job2.SearchResult] {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 128*time.Second)
 	defer cancel()
-	workerScheduler.Send(0, job2.Search(-1, jobMetadata, "", metadata.file), ctx)
+
+	workerScheduler.Send(0, job2.Search(-1, jobMetadata, "", fileHandler), ctx)
 
 	results := workerScheduler.Results()
 
@@ -87,30 +93,23 @@ func (d *db) Run(s syntax.Structure) result.Result[job2.SearchResult] {
 }
 
 func (d *db) Close() result.Result[any] {
-	errs := make([]error, 0)
-	for _, v := range d.files {
-		err := v.file.Close()
-		if err != nil {
-			errs = append(errs, fmt.Errorf("File %s could not be closed without an error: %w", v.originalPath, err))
-		}
-	}
-
-	return result.NewResult[any](nil, errs)
+	return result.NewResult[any](nil, nil)
 }
 
 func New() DB {
 	return &db{files: make(map[string]fileMetadata)}
 }
 
-func openFiles(alias, f string, d *db) error {
+func assignColumns(alias, f string, d *db) error {
 	if _, ok := d.files[alias]; ok {
 		return nil
 	}
 
-	r, err := os.Open(f)
+	r, err := openFile(f)
 	if err != nil {
 		return err
 	}
+	defer r.Close()
 
 	columns, err := readColumns(r)
 	if err != nil {
@@ -120,10 +119,18 @@ func openFiles(alias, f string, d *db) error {
 	d.files[alias] = fileMetadata{
 		columns:      columns,
 		originalPath: f,
-		file:         r,
 	}
 
 	return nil
+}
+
+func openFile(f string) (io.ReadCloser, error) {
+	r, err := os.Open(f)
+	if err != nil {
+		return nil, err
+	}
+
+	return r, nil
 }
 
 func readColumns(f io.Reader) ([]metadataColumn, error) {
