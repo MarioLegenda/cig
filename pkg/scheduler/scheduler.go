@@ -5,6 +5,7 @@ import (
 	"fmt"
 	job2 "github.com/MarioLegenda/cig/pkg/job"
 	"github.com/MarioLegenda/cig/pkg/result"
+	"sync/atomic"
 	"time"
 )
 
@@ -13,7 +14,7 @@ type scheduler struct {
 	jobs    chan job
 	writer  chan result.Result[job2.SearchResult]
 
-	finishedJobs []int
+	finishedJobs atomic.Int32
 
 	closeCtx  context.Context
 	cancelCtx context.CancelFunc
@@ -48,7 +49,7 @@ func (s *scheduler) Schedule(id int) error {
 func (s *scheduler) Start() {
 	go func() {
 		for {
-			if len(s.finishedJobs) == len(s.workers) {
+			if s.finishedJobs.Load() == int32(len(s.workers)) {
 				close(s.writer)
 				return
 			}
@@ -69,7 +70,7 @@ func (s *scheduler) Start() {
 				default:
 					fn := j.fn
 					fn(j.id, s.writer, j.ctx)
-					s.finishedJobs = append(s.finishedJobs, id)
+					s.finishedJobs.Add(1)
 					return
 				}
 			}
@@ -103,11 +104,10 @@ func (s *scheduler) Close() {
 func New() Scheduler {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	return &scheduler{
-		workers:      make([]int, 0),
-		jobs:         make(chan job),
-		finishedJobs: make([]int, 0),
-		writer:       make(chan result.Result[job2.SearchResult]),
-		closeCtx:     ctx,
-		cancelCtx:    cancel,
+		workers:   make([]int, 0),
+		jobs:      make(chan job),
+		writer:    make(chan result.Result[job2.SearchResult]),
+		closeCtx:  ctx,
+		cancelCtx: cancel,
 	}
 }
