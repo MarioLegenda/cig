@@ -8,7 +8,7 @@ import (
 type testStruct struct {
 }
 
-func TestCig(t *testing.T) {
+func TestGettingAllResults(t *testing.T) {
 	cig := New()
 
 	res := cig.Run("SELECT * FROM path:testdata/example.csv AS e")
@@ -19,6 +19,21 @@ func TestCig(t *testing.T) {
 	foundResults := res.Result()
 
 	assert.Equal(t, 20858, len(foundResults))
+
+	cig.Close()
+}
+
+func TestGettingResultsWithSingleWhereClause(t *testing.T) {
+	cig := New()
+
+	res := cig.Run("SELECT * FROM path:testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC' = 'Level 1'")
+
+	assert.False(t, res.HasErrors())
+	assert.Equal(t, 0, len(res.Errors()))
+
+	foundResults := res.Result()
+
+	assert.Equal(t, 2511, len(foundResults))
 
 	cig.Close()
 }

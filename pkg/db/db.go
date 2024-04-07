@@ -14,13 +14,8 @@ import (
 	"time"
 )
 
-type metadataColumn struct {
-	position int
-	name     string
-}
-
 type fileMetadata struct {
-	columns      []metadataColumn
+	columns      metadataColumns
 	originalPath string
 }
 
@@ -45,18 +40,50 @@ func (d *db) Run(s syntax.Structure) result.Result[job2.SearchResult] {
 
 	jobColumnMetadata := createJobColumnMetadata(d.files[file.Alias()])
 
+	jobId := 0
 	workerScheduler := scheduler.New()
-	if err := workerScheduler.Schedule(0); err != nil {
+	if err := workerScheduler.Schedule(jobId); err != nil {
 		errs = append(errs, err)
 		return result.NewResult[job2.SearchResult](nil, errs)
 	}
 
 	workerScheduler.Start()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
+	if s.Condition() != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
 
-	workerScheduler.Send(0, job2.Search(-1, jobColumnMetadata, "", fileHandler), ctx)
+		clm := s.Condition().Column().Column()
+		columnPosition := d.files[file.Alias()].columns.getPositionByName(clm)
+		if columnPosition == -1 {
+			errs = append(errs, fmt.Errorf("Cannot find column position for %s in where clause. Are you sure this column exists?", clm))
+			return result.NewResult[job2.SearchResult](nil, errs)
+		}
+
+		workerScheduler.Send(
+			jobId,
+			job2.Search(
+				-1,
+				jobColumnMetadata,
+				job2.NewOperator(s.Condition().Value().Value(), s.Condition().Operator().ConditionType(), columnPosition),
+				fileHandler,
+			),
+			ctx,
+		)
+	} else {
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+		workerScheduler.Send(
+			jobId,
+			job2.Search(
+				-1,
+				jobColumnMetadata,
+				nil,
+				fileHandler,
+			),
+			ctx,
+		)
+	}
 
 	processedResults, resErrs := processResults(workerScheduler.Results())
 	if resErrs != nil {
@@ -110,14 +137,14 @@ func openFile(f string) (io.ReadCloser, error) {
 	return r, nil
 }
 
-func readColumns(f io.Reader) ([]metadataColumn, error) {
+func readColumns(f io.Reader) (metadataColumns, error) {
 	lineReader := fs.NewLineReader(f, false)
 	cls, err := lineReader()
 	if err != nil {
 		return nil, err
 	}
 
-	columns := make([]metadataColumn, 0)
+	columns := make(metadataColumns, 0)
 	for i, k := range cls {
 		columns = append(columns, metadataColumn{
 			position: i,
