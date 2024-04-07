@@ -1,17 +1,17 @@
 package cig
 
 import (
+	"github.com/MarioLegenda/cig/pkg/job"
+	"github.com/MarioLegenda/cig/pkg/result"
 	"github.com/stretchr/testify/assert"
+	"sync"
 	"testing"
 )
 
-type testStruct struct {
-}
-
 func TestGettingAllResults(t *testing.T) {
-	cig := New()
+	c := New()
 
-	res := cig.Run("SELECT * FROM path:testdata/example.csv AS e")
+	res := c.Run("SELECT * FROM path:testdata/example.csv AS e")
 
 	assert.False(t, res.HasErrors())
 	assert.Equal(t, 0, len(res.Errors()))
@@ -19,14 +19,12 @@ func TestGettingAllResults(t *testing.T) {
 	foundResults := res.Result()
 
 	assert.Equal(t, 20858, len(foundResults))
-
-	cig.Close()
 }
 
 func TestGettingResultsWithSingleWhereClause(t *testing.T) {
-	cig := New()
+	c := New()
 
-	res := cig.Run("SELECT * FROM path:testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC' = 'Level 1'")
+	res := c.Run("SELECT * FROM path:testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC' = 'Level 1'")
 
 	assert.False(t, res.HasErrors())
 	assert.Equal(t, 0, len(res.Errors()))
@@ -34,15 +32,25 @@ func TestGettingResultsWithSingleWhereClause(t *testing.T) {
 	foundResults := res.Result()
 
 	assert.Equal(t, 2511, len(foundResults))
-
-	cig.Close()
 }
 
-func TestShouldCloseCigWithoutErrors(t *testing.T) {
-	cig := New()
+func TestParallelRun(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	c := New()
 
-	cig.Run("SELECT * FROM path:testdata/example.csv AS e")
-	closeRes := cig.Close()
+	results := make(chan result.Result[job.SearchResult], 10)
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			results <- c.Run("SELECT * FROM path:testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC' = 'Level 1'")
+			wg.Done()
+		}()
+	}
 
-	assert.Nil(t, closeRes.Errors())
+	wg.Wait()
+	close(results)
+
+	for res := range results {
+		assert.Nil(t, res.Errors())
+	}
 }
