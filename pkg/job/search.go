@@ -13,14 +13,27 @@ type columnMetadata struct {
 	columnNames     []string
 }
 
-func NewColumnMetadata(columnsToReturn []int, columnNames []string) columnMetadata {
+type ColumnMetadata interface {
+	ColumnsToReturn() []int
+	ColumnNames() []string
+}
+
+func NewColumnMetadata(columnsToReturn []int, columnNames []string) ColumnMetadata {
 	return columnMetadata{
 		columnsToReturn: columnsToReturn,
 		columnNames:     columnNames,
 	}
 }
 
-func Search(columnPosition int, metadata columnMetadata, value string, f io.ReadCloser) JobFn {
+func (cm columnMetadata) ColumnsToReturn() []int {
+	return cm.columnsToReturn
+}
+
+func (cm columnMetadata) ColumnNames() []string {
+	return cm.columnNames
+}
+
+func Search(columnPosition int, metadata ColumnMetadata, value string, f io.ReadCloser) JobFn {
 	return func(id int, writer chan result.Result[SearchResult], ctx context.Context) {
 		results := make(SearchResult, 0)
 		lineReader := fs.NewLineReader(f, true)
@@ -54,8 +67,8 @@ func Search(columnPosition int, metadata columnMetadata, value string, f io.Read
 					singleResult := make(map[string]string)
 
 					for _, line := range lines {
-						for _, c := range metadata.columnsToReturn {
-							columnName := metadata.columnNames[c]
+						for _, c := range metadata.ColumnsToReturn() {
+							columnName := metadata.ColumnNames()[c]
 							singleResult[columnName] = line
 						}
 					}

@@ -8,6 +8,7 @@ import (
 	"github.com/MarioLegenda/cig/pkg/result"
 	"github.com/MarioLegenda/cig/pkg/scheduler"
 	"github.com/MarioLegenda/cig/pkg/syntax"
+	"github.com/MarioLegenda/cig/pkg/syntax/syntaxParts"
 	"io"
 	"os"
 	"time"
@@ -36,28 +37,13 @@ func (d *db) Run(s syntax.Structure) result.Result[job2.SearchResult] {
 	file := s.FileDB()
 	errs := make([]error, 0)
 
-	fileHandler, err := os.Open(file.Path())
+	fileHandler, err := prepareRun(file, d)
 	if err != nil {
-		errs = append(errs, fmt.Errorf("Opening file %s failed with error: %w", file.Path(), err))
+		errs = append(errs, err)
 		return result.NewResult[job2.SearchResult](nil, errs)
 	}
 
-	if err := assignColumns(file.Alias(), file.Path(), d); err != nil {
-		errs = append(errs, fmt.Errorf("Opening file %s failed with error: %w", file.Path(), err))
-		return result.NewResult[job2.SearchResult](nil, errs)
-	}
-
-	metadata := d.files[file.Alias()]
-
-	positions := make([]int, len(metadata.columns))
-	columnNames := make([]string, len(metadata.columns))
-
-	for _, m := range metadata.columns {
-		positions = append(positions, m.position)
-		columnNames = append(columnNames, m.name)
-	}
-
-	jobMetadata := job2.NewColumnMetadata(positions, columnNames)
+	jobColumnMetadata := createJobColumnMetadata(d.files[file.Alias()])
 
 	workerScheduler := scheduler.New()
 	if err := workerScheduler.Schedule(0); err != nil {
@@ -67,29 +53,20 @@ func (d *db) Run(s syntax.Structure) result.Result[job2.SearchResult] {
 
 	workerScheduler.Start()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 128*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	workerScheduler.Send(0, job2.Search(-1, jobMetadata, "", fileHandler), ctx)
+	workerScheduler.Send(0, job2.Search(-1, jobColumnMetadata, "", fileHandler), ctx)
 
-	results := workerScheduler.Results()
-
-	newResults := make(job2.SearchResult, 0)
-	for _, res := range results {
-		if res.HasErrors() {
-			errs = append(errs, res.Errors()...)
-			return result.NewResult[job2.SearchResult](nil, errs)
-		}
-
-		wrappedResults := res.Result()
-		for _, r := range wrappedResults {
-			newResults = append(newResults, r)
-		}
+	processedResults, resErrs := processResults(workerScheduler.Results())
+	if resErrs != nil {
+		errs = append(errs, resErrs...)
+		return result.NewResult[job2.SearchResult](nil, errs)
 	}
 
 	workerScheduler.Close()
 
-	return result.NewResult[job2.SearchResult](newResults, nil)
+	return result.NewResult[job2.SearchResult](processedResults, nil)
 }
 
 func (d *db) Close() result.Result[any] {
@@ -149,4 +126,45 @@ func readColumns(f io.Reader) ([]metadataColumn, error) {
 	}
 
 	return columns, nil
+}
+
+func createJobColumnMetadata(fsMetadata fileMetadata) job2.ColumnMetadata {
+	positions := make([]int, len(fsMetadata.columns))
+	columnNames := make([]string, len(fsMetadata.columns))
+
+	for _, m := range fsMetadata.columns {
+		positions = append(positions, m.position)
+		columnNames = append(columnNames, m.name)
+	}
+
+	return job2.NewColumnMetadata(positions, columnNames)
+}
+
+func processResults(schedulerResults []result.Result[job2.SearchResult]) (job2.SearchResult, []error) {
+	newResults := make(job2.SearchResult, 0)
+	for _, res := range schedulerResults {
+		if res.HasErrors() {
+			return nil, res.Errors()
+		}
+
+		wrappedResults := res.Result()
+		for _, r := range wrappedResults {
+			newResults = append(newResults, r)
+		}
+	}
+
+	return newResults, nil
+}
+
+func prepareRun(file syntaxParts.FileDB, d *db) (io.ReadCloser, error) {
+	f, err := os.Open(file.Path())
+	if err != nil {
+		return nil, fmt.Errorf("Opening file %s failed with error: %w", file.Path(), err)
+	}
+
+	if err := assignColumns(file.Alias(), file.Path(), d); err != nil {
+		return nil, fmt.Errorf("Opening file %s failed with error: %w", file.Path(), err)
+	}
+
+	return f, nil
 }
