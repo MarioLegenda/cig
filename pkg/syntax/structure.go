@@ -66,6 +66,10 @@ func resolveFiles(path, alias string) (string, string) {
 }
 
 func resolveWhereClause(chunks []string) syntaxParts.Condition {
+	if len(chunks) == 0 {
+		return nil
+	}
+
 	originalColumn := chunks[1]
 	split := strings.Split(originalColumn[1:len(originalColumn)-1], ".")
 

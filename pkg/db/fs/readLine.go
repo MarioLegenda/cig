@@ -1,33 +1,29 @@
 package fs
 
 import (
-	"bufio"
-	"bytes"
+	"encoding/csv"
 	"errors"
 	"io"
 )
 
-func ReadLine(f io.Reader) ([]byte, error) {
-	br := bufio.NewReader(f)
-	var buffer bytes.Buffer
+func NewLineReader(f io.Reader, skipColumns bool) func() ([]string, error) {
+	r := csv.NewReader(f)
 
-	for {
-		b, err := br.ReadByte()
-
-		if b == 10 {
-			break
-		}
-
+	return func() ([]string, error) {
+		b, err := r.Read()
 		if err != nil && !errors.Is(err, io.EOF) {
 			return nil, err
 		}
 
-		if err != nil {
-			return buffer.Bytes(), nil
+		if skipColumns {
+			b, err := r.Read()
+			if err != nil && !errors.Is(err, io.EOF) {
+				return nil, err
+			}
+
+			return b, nil
 		}
 
-		buffer.WriteByte(b)
+		return b, nil
 	}
-
-	return buffer.Bytes(), nil
 }
