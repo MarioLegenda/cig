@@ -9,11 +9,9 @@ import (
 
 type Cig interface {
 	Run(sql string) result.Result[job.SearchResult]
-	Close() result.Result[any]
 }
 
 type cig struct {
-	db db.DB
 }
 
 func (c cig) Run(sql string) result.Result[job.SearchResult] {
@@ -22,15 +20,12 @@ func (c cig) Run(sql string) result.Result[job.SearchResult] {
 		return result.NewResult[job.SearchResult](nil, res.Errors())
 	}
 
-	dbResult := c.db.Run(res.Result())
+	fsDb := db.New()
+	dbResult := fsDb.Run(res.Result())
 
 	return result.NewResult[job.SearchResult](dbResult.Result(), dbResult.Errors())
 }
 
-func (c cig) Close() result.Result[any] {
-	return c.db.Close()
-}
-
 func New() Cig {
-	return cig{db: db.New()}
+	return cig{}
 }
