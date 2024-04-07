@@ -3,17 +3,17 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	job2 "github.com/MarioLegenda/cig/pkg/job"
 	"github.com/MarioLegenda/cig/pkg/result"
-	job2 "github.com/MarioLegenda/cig/pkg/syntax/job"
 	"time"
 )
-
-type JobFn = func(writer chan result.Result[job2.SearchResult])
 
 type scheduler struct {
 	workers []int
 	jobs    chan job
-	writers []chan result.Result[job2.SearchResult]
+	writer  chan result.Result[job2.SearchResult]
+
+	finishedJobs []int
 
 	closeCtx  context.Context
 	cancelCtx context.CancelFunc
@@ -21,14 +21,14 @@ type scheduler struct {
 
 type job struct {
 	id  int
-	fn  JobFn
+	fn  job2.JobFn
 	ctx context.Context
 }
 
 type Scheduler interface {
 	Schedule(id int) error
 	Start()
-	Send(id int, fn JobFn, ctx context.Context)
+	Send(id int, fn job2.JobFn, ctx context.Context)
 	Close()
 	Results() []result.Result[job2.SearchResult]
 }
@@ -46,11 +46,20 @@ func (s *scheduler) Schedule(id int) error {
 }
 
 func (s *scheduler) Start() {
+	go func() {
+		for {
+			if len(s.finishedJobs) == len(s.workers) {
+				close(s.writer)
+				return
+			}
+		}
+	}()
+
 	for _, w := range s.workers {
 		go func(id int) {
 			for {
-				job := <-s.jobs
-				if job.id != id {
+				j := <-s.jobs
+				if j.id != id {
 					continue
 				}
 
@@ -58,10 +67,9 @@ func (s *scheduler) Start() {
 				case <-s.closeCtx.Done():
 					return
 				default:
-					fn := job.fn
-					writer := make(chan result.Result[job2.SearchResult])
-					fn(writer)
-					s.writers = append(s.writers, writer)
+					fn := j.fn
+					fn(j.id, s.writer, j.ctx)
+					s.finishedJobs = append(s.finishedJobs, id)
 					return
 				}
 			}
@@ -69,7 +77,7 @@ func (s *scheduler) Start() {
 	}
 }
 
-func (s *scheduler) Send(id int, fn JobFn, ctx context.Context) {
+func (s *scheduler) Send(id int, fn job2.JobFn, ctx context.Context) {
 	j := job{
 		id:  id,
 		fn:  fn,
@@ -80,10 +88,11 @@ func (s *scheduler) Send(id int, fn JobFn, ctx context.Context) {
 }
 
 func (s *scheduler) Results() []result.Result[job2.SearchResult] {
-	results := make([]result.Result[job2.SearchResult], len(s.writers))
-	for i, w := range s.writers {
-		results[i] = <-w
-		close(w)
+	results := make([]result.Result[job2.SearchResult], 0)
+	fmt.Println("Starting blocking...")
+	for res := range s.writer {
+		fmt.Println("received result")
+		results = append(results, res)
 	}
 
 	return results
@@ -96,17 +105,11 @@ func (s *scheduler) Close() {
 func New() Scheduler {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	return &scheduler{
-		workers:   make([]int, 0),
-		jobs:      nil,
-		closeCtx:  ctx,
-		cancelCtx: cancel,
-	}
-}
-
-func newJob(id int, fn JobFn, ctx context.Context) job {
-	return job{
-		id:  id,
-		fn:  fn,
-		ctx: ctx,
+		workers:      make([]int, 0),
+		jobs:         make(chan job),
+		finishedJobs: make([]int, 0),
+		writer:       make(chan result.Result[job2.SearchResult]),
+		closeCtx:     ctx,
+		cancelCtx:    cancel,
 	}
 }

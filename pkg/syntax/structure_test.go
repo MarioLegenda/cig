@@ -7,7 +7,7 @@ import (
 )
 
 func TestStructureValid(t *testing.T) {
-	sql := "SELECT * FROM path:../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC' = 'Level 1'"
+	sql := "SELECT * FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC' = 'Level 1'"
 
 	res := NewStructure(sql)
 
@@ -22,7 +22,7 @@ func TestStructureValid(t *testing.T) {
 
 	assert.Equal(t, condition.Value().Original(), "'Level 1'")
 	assert.Equal(t, condition.Value().Value(), "Level 1")
-	
+
 	assert.Equal(t, condition.Operator().Original(), "=")
 
 	assert.Nil(t, condition.Next())
