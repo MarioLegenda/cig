@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/MarioLegenda/cig/pkg/db/fs"
 	"github.com/MarioLegenda/cig/pkg/result"
+	"github.com/MarioLegenda/cig/pkg/syntax/operators"
 	"io"
 )
 
@@ -33,7 +34,7 @@ func (cm columnMetadata) ColumnNames() []string {
 	return cm.columnNames
 }
 
-func Search(columnPosition int, metadata ColumnMetadata, value string, f io.ReadCloser) JobFn {
+func Search(columnPosition int, metadata ColumnMetadata, op Operator, f io.ReadCloser) JobFn {
 	return func(id int, writer chan result.Result[SearchResult], ctx context.Context) {
 		results := make(SearchResult, 0)
 		lineReader := fs.NewLineReader(f, true)
@@ -62,22 +63,31 @@ func Search(columnPosition int, metadata ColumnMetadata, value string, f io.Read
 
 					return
 				}
+				
+				if op != nil {
+					lineValue := lines[op.Column()]
 
-				if columnPosition == -1 {
-					singleResult := make(map[string]string)
-
-					for _, line := range lines {
-						for _, c := range metadata.ColumnsToReturn() {
-							columnName := metadata.ColumnNames()[c]
-							singleResult[columnName] = line
-						}
+					if op.Operator() == operators.EqualOperator && lineValue == op.Value() {
+						results = append(results, createResult(lines, metadata))
 					}
-
-					results = append(results, singleResult)
+				} else {
+					results = append(results, createResult(lines, metadata))
 				}
 			}
 		}
 
 		writer <- result.NewResult[SearchResult](results, nil)
 	}
+}
+
+func createResult(lines []string, metadata ColumnMetadata) map[string]string {
+	res := make(map[string]string)
+	for _, line := range lines {
+		for _, c := range metadata.ColumnsToReturn() {
+			columnName := metadata.ColumnNames()[c]
+			res[columnName] = line
+		}
+	}
+
+	return res
 }
