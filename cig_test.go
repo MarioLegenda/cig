@@ -18,7 +18,7 @@ func TestCig(t *testing.T) {
 
 	foundResults := res.Result()
 
-	assert.NotEqual(t, 0, len(foundResults))
+	assert.Equal(t, 20858, len(foundResults))
 
 	cig.Close()
 }

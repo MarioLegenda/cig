@@ -1,7 +1,6 @@
 package cig
 
 import (
-	"fmt"
 	"github.com/MarioLegenda/cig/pkg/db"
 	"github.com/MarioLegenda/cig/pkg/result"
 	"github.com/MarioLegenda/cig/pkg/syntax"
@@ -23,8 +22,6 @@ func (c cig) Run(sql string) result.Result[[]map[string]string] {
 	}
 
 	dbResult := c.db.Run(res.Result())
-
-	fmt.Println(dbResult.Errors())
 
 	return result.NewResult[[]map[string]string](dbResult.Result(), dbResult.Errors())
 }

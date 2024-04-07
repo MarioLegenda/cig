@@ -89,9 +89,7 @@ func (s *scheduler) Send(id int, fn job2.JobFn, ctx context.Context) {
 
 func (s *scheduler) Results() []result.Result[job2.SearchResult] {
 	results := make([]result.Result[job2.SearchResult], 0)
-	fmt.Println("Starting blocking...")
 	for res := range s.writer {
-		fmt.Println("received result")
 		results = append(results, res)
 	}
 
