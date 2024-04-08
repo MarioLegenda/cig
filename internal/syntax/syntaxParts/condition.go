@@ -27,12 +27,11 @@ type ConditionValue interface {
 }
 
 type condition struct {
-	value        ConditionValue
-	column       ConditionColumn
-	operator     ConditionOperator
-	compoundHead Condition
-	next         Condition
-	prev         Condition
+	value    ConditionValue
+	column   ConditionColumn
+	operator ConditionOperator
+	next     Condition
+	prev     Condition
 }
 
 type conditionColumn struct {
