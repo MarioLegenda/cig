@@ -2,6 +2,7 @@ package syntax
 
 import (
 	"github.com/MarioLegenda/cig/internal/syntax/corrector"
+	"github.com/MarioLegenda/cig/internal/syntax/operators"
 	"github.com/MarioLegenda/cig/internal/syntax/splitter"
 	"github.com/MarioLegenda/cig/internal/syntax/syntaxParts"
 	"github.com/MarioLegenda/cig/pkg/result"
@@ -70,14 +71,69 @@ func resolveWhereClause(chunks []string) syntaxParts.Condition {
 		return nil
 	}
 
-	originalColumn := chunks[1]
-	split := strings.Split(originalColumn[1:len(originalColumn)-1], ".")
+	conditionsOnly := chunks[1:]
 
-	return syntaxParts.NewCondition(
-		syntaxParts.NewConditionColumn(split[0], split[1],
-			originalColumn,
-		),
-		syntaxParts.NewConditionOperator(chunks[2], chunks[2]),
-		syntaxParts.NewConditionValue(chunks[3][1:len(chunks[3])-1], chunks[3]),
-	)
+	var head syntaxParts.Condition
+	var next syntaxParts.Condition
+	isDiscoveryMode := true
+	position := 0
+	var parts [3]string
+	for _, c := range conditionsOnly {
+		if !isDiscoveryMode {
+			// TODO: check that next != nil to prevent runtime panic
+			logicalOperator := operators.AndOperator
+			if strings.ToLower(c) == operators.OrOperator {
+				logicalOperator = operators.OrOperator
+			}
+
+			t := syntaxParts.NewCondition(
+				nil,
+				syntaxParts.NewConditionOperator(logicalOperator, c),
+				nil,
+			)
+
+			if next == nil {
+				next = t
+			} else {
+				next.SetNext(t)
+			}
+
+			continue
+		}
+
+		if isDiscoveryMode {
+			parts[position] = c
+		}
+
+		if position == 2 {
+			isDiscoveryMode = false
+			position = 0
+
+			if head == nil {
+				originalColumn := parts[0]
+				split := strings.Split(originalColumn[1:len(originalColumn)-1], ".")
+
+				head = syntaxParts.NewCondition(
+					syntaxParts.NewConditionColumn(split[0], split[1],
+						originalColumn,
+					),
+					syntaxParts.NewConditionOperator(parts[1], parts[1]),
+					syntaxParts.NewConditionValue(parts[2][1:len(parts[2])-1], parts[2]),
+				)
+			} else if head != nil {
+
+			}
+
+			for i := 0; i < len(parts); i++ {
+				parts[i] = ""
+			}
+
+			continue
+		}
+
+		position++
+	}
+
+	head.SetNext(next)
+	return head
 }
