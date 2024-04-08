@@ -3,9 +3,9 @@ package job
 import (
 	"context"
 	"fmt"
-	"github.com/MarioLegenda/cig/pkg/db/fs"
+	"github.com/MarioLegenda/cig/internal/db/fs"
+	"github.com/MarioLegenda/cig/internal/syntax/operators"
 	"github.com/MarioLegenda/cig/pkg/result"
-	"github.com/MarioLegenda/cig/pkg/syntax/operators"
 	"io"
 )
 
@@ -63,7 +63,7 @@ func Search(columnPosition int, metadata ColumnMetadata, op Operator, f io.ReadC
 
 					return
 				}
-				
+
 				if op != nil {
 					lineValue := lines[op.Column()]
 

@@ -1,7 +1,7 @@
 package cig
 
 import (
-	"github.com/MarioLegenda/cig/pkg/job"
+	"github.com/MarioLegenda/cig/internal/job"
 	"github.com/MarioLegenda/cig/pkg/result"
 	"github.com/stretchr/testify/assert"
 	"sync"

@@ -1,10 +1,10 @@
 package cig
 
 import (
-	"github.com/MarioLegenda/cig/pkg/db"
-	"github.com/MarioLegenda/cig/pkg/job"
+	"github.com/MarioLegenda/cig/internal/db"
+	"github.com/MarioLegenda/cig/internal/job"
+	"github.com/MarioLegenda/cig/internal/syntax"
 	"github.com/MarioLegenda/cig/pkg/result"
-	"github.com/MarioLegenda/cig/pkg/syntax"
 )
 
 type Cig interface {

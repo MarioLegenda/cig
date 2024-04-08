@@ -1,10 +1,10 @@
 package syntax
 
 import (
+	"github.com/MarioLegenda/cig/internal/syntax/corrector"
+	"github.com/MarioLegenda/cig/internal/syntax/splitter"
+	"github.com/MarioLegenda/cig/internal/syntax/syntaxParts"
 	"github.com/MarioLegenda/cig/pkg/result"
-	"github.com/MarioLegenda/cig/pkg/syntax/corrector"
-	"github.com/MarioLegenda/cig/pkg/syntax/splitter"
-	"github.com/MarioLegenda/cig/pkg/syntax/syntaxParts"
 	"strings"
 )
 
