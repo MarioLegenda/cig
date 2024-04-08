@@ -2,15 +2,18 @@ package corrector
 
 import (
 	"errors"
+	"fmt"
 	"github.com/MarioLegenda/cig/internal/syntax/splitter"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestCorrectorIsCorrect(t *testing.T) {
-	sql := "SELECT * FROM path:../../../testdata/example.csv AS g WHERE 'g.Area' = 'A100100'"
+	sql := "SELECT * FROM path:../../../testdata/example.csv AS g WHERE 'g.Area' = 'A100100' AND 'g.Locale' != '45' OR 'g.Field' <= '23'"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	fmt.Print(errs)
 
 	assert.Equal(t, 0, len(errs))
 }
@@ -102,4 +105,16 @@ func TestInCorrectorWhereClauseValue(t *testing.T) {
 	assert.Equal(t, 1, len(errs))
 
 	assert.True(t, errors.Is(errs[0], InvalidValueChuck))
+}
+
+func TestCorrectorMultipleInvalidConditions(t *testing.T) {
+	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'a' = 'b' AD 'b' != 'a' OT 'c' != 'o' BSK 'C' <= 'O'"
+
+	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	assert.Equal(t, 3, len(errs))
+
+	assert.True(t, errors.Is(errs[0], InvalidWhereClause))
+	assert.True(t, errors.Is(errs[1], InvalidWhereClause))
+	assert.True(t, errors.Is(errs[2], InvalidWhereClause))
 }

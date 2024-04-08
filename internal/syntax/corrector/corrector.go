@@ -71,31 +71,60 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 		}
 
 		where := whereClause[0]
-		column := whereClause[1]
-		operator := whereClause[2]
-		value := whereClause[3]
-
 		if strings.ToLower(where) != "where" {
 			errs = append(errs, fmt.Errorf("Expected WHERE, got %s: %w", whereClause[0], InvalidWhereClause))
 		}
 
-		if err := checkIsQuoteEnclosed(column, "column"); err != nil {
-			errs = append(errs, err)
-		}
+		conditionParts := whereClause[1:]
 
-		if err := checkOperator(operator); err != nil {
-			errs = append(errs, err)
-		}
+		isDiscoveryMode := true
+		var condition [3]string
+		position := 0
+		for _, k := range conditionParts {
+			if !isDiscoveryMode {
+				if err := checkLogicalOperator(k); err != nil {
+					errs = append(errs, err)
+				}
 
-		if err := checkIsQuoteEnclosed(value, "value"); err != nil {
-			errs = append(errs, err)
+				isDiscoveryMode = true
+				continue
+			}
+
+			if isDiscoveryMode {
+				condition[position] = k
+			}
+
+			if position == 2 {
+				isDiscoveryMode = false
+				position = 0
+
+				if err := checkIsQuoteEnclosed(condition[0], "column"); err != nil {
+					errs = append(errs, err)
+				}
+
+				if err := checkConditionalOperator(condition[1]); err != nil {
+					errs = append(errs, err)
+				}
+
+				if err := checkIsQuoteEnclosed(condition[2], "value"); err != nil {
+					errs = append(errs, err)
+				}
+
+				for i := 0; i < len(condition); i++ {
+					condition[0] = ""
+				}
+
+				continue
+			}
+
+			position++
 		}
 	}
 
 	return errs
 }
 
-func checkOperator(op string) error {
+func checkConditionalOperator(op string) error {
 	found := false
 	for _, v := range operators.Operators {
 		if v == op {
@@ -106,6 +135,15 @@ func checkOperator(op string) error {
 
 	if !found {
 		return fmt.Errorf("Expected one of valid operators %s, got %s: %w", strings.Join(operators.Operators, ","), op, InvalidWhereClause)
+	}
+
+	return nil
+}
+
+func checkLogicalOperator(op string) error {
+	t := strings.ToLower(op)
+	if t != operators.AndOperator && t != operators.OrOperator {
+		return fmt.Errorf("Expected AND or OR logical operators, got %s: %w", op, InvalidWhereClause)
 	}
 
 	return nil
