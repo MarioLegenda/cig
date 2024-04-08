@@ -42,14 +42,13 @@ func (d *db) Run(s syntax.Structure) result.Result[job2.SearchResult] {
 
 	jobId := 0
 	workerScheduler := scheduler.New()
-	if err := workerScheduler.Schedule(jobId); err != nil {
-		errs = append(errs, err)
-		return result.NewResult[job2.SearchResult](nil, errs)
-	}
-
-	workerScheduler.Start()
 
 	if s.Condition() != nil {
+		if err := workerScheduler.Schedule(jobId); err != nil {
+			errs = append(errs, err)
+			return result.NewResult[job2.SearchResult](nil, errs)
+		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 
@@ -71,6 +70,11 @@ func (d *db) Run(s syntax.Structure) result.Result[job2.SearchResult] {
 			ctx,
 		)
 	} else {
+		if err := workerScheduler.Schedule(jobId); err != nil {
+			errs = append(errs, err)
+			return result.NewResult[job2.SearchResult](nil, errs)
+		}
+		
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 		workerScheduler.Send(
@@ -83,6 +87,11 @@ func (d *db) Run(s syntax.Structure) result.Result[job2.SearchResult] {
 			),
 			ctx,
 		)
+	}
+
+	if err := workerScheduler.Start(); err != nil {
+		errs = append(errs, err)
+		return result.NewResult[job2.SearchResult](nil, errs)
 	}
 
 	processedResults, resErrs := processResults(workerScheduler.Results())
