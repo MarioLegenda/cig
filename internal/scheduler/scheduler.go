@@ -9,6 +9,9 @@ import (
 	"time"
 )
 
+// TODO: create balancer for event scheduler since currently, scheduler is a trowaway instance for every db run,
+// TODO: possibility for spawning too many goroutines is not good
+
 type scheduler struct {
 	workers []int
 	jobs    chan job
