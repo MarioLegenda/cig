@@ -21,6 +21,8 @@ type scheduler struct {
 
 	closeCtx  context.Context
 	cancelCtx context.CancelFunc
+
+	sentJobs []job
 }
 
 type job struct {
@@ -31,7 +33,7 @@ type job struct {
 
 type Scheduler interface {
 	Schedule(id int) error
-	Start()
+	Start() error
 	Send(id int, fn job2.JobFn, ctx context.Context)
 	Close()
 	Results() []result.Result[job2.SearchResult]
@@ -49,7 +51,11 @@ func (s *scheduler) Schedule(id int) error {
 	return nil
 }
 
-func (s *scheduler) Start() {
+func (s *scheduler) Start() error {
+	if err := validateJobs(s); err != nil {
+		return err
+	}
+
 	go func() {
 		for {
 			if s.finishedJobs.Load() == int32(len(s.workers)) {
@@ -79,16 +85,20 @@ func (s *scheduler) Start() {
 			}
 		}(w)
 	}
+
+	for _, j := range s.sentJobs {
+		s.jobs <- j
+	}
+
+	return nil
 }
 
 func (s *scheduler) Send(id int, fn job2.JobFn, ctx context.Context) {
-	j := job{
+	s.sentJobs = append(s.sentJobs, job{
 		id:  id,
 		fn:  fn,
 		ctx: ctx,
-	}
-
-	s.jobs <- j
+	})
 }
 
 func (s *scheduler) Results() []result.Result[job2.SearchResult] {
@@ -113,4 +123,15 @@ func New() Scheduler {
 		closeCtx:  ctx,
 		cancelCtx: cancel,
 	}
+}
+
+func validateJobs(s *scheduler) error {
+	workers := s.workers
+	sentJobs := s.sentJobs
+
+	if len(workers) != len(sentJobs) {
+		return fmt.Errorf("Internal error. There should be equal number of workers and sent jobs. This is a bug.")
+	}
+
+	return nil
 }
