@@ -2,7 +2,7 @@ package corrector
 
 import (
 	"errors"
-	"github.com/MarioLegenda/cig/pkg/syntax/splitter"
+	"github.com/MarioLegenda/cig/internal/syntax/splitter"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

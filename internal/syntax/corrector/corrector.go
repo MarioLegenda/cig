@@ -3,8 +3,8 @@ package corrector
 import (
 	"errors"
 	"fmt"
-	"github.com/MarioLegenda/cig/pkg/syntax/operators"
-	"github.com/MarioLegenda/cig/pkg/syntax/splitter"
+	"github.com/MarioLegenda/cig/internal/syntax/operators"
+	"github.com/MarioLegenda/cig/internal/syntax/splitter"
 	"os"
 	"strings"
 )

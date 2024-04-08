@@ -3,7 +3,7 @@ package scheduler
 import (
 	"context"
 	"fmt"
-	job2 "github.com/MarioLegenda/cig/pkg/job"
+	job2 "github.com/MarioLegenda/cig/internal/job"
 	"github.com/MarioLegenda/cig/pkg/result"
 	"sync/atomic"
 	"time"
