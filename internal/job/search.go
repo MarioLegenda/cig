@@ -69,14 +69,14 @@ func Search(columnPosition int, metadata ColumnMetadata, op Operator, f io.ReadC
 
 					if op.Operator() == operators.EqualOperator && lineValue == op.Value() {
 						results = append(results, createResult(lines, metadata))
+					} else if op.Operator() == operators.UnEqualOperator && lineValue != op.Value() {
+						results = append(results, createResult(lines, metadata))
 					}
 				} else {
 					results = append(results, createResult(lines, metadata))
 				}
 			}
 		}
-
-		writer <- result.NewResult[SearchResult](results, nil)
 	}
 }
 
