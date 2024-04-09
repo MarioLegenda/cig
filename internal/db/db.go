@@ -74,7 +74,7 @@ func (d *db) Run(s syntax.Structure) result.Result[job2.SearchResult] {
 			errs = append(errs, err)
 			return result.NewResult[job2.SearchResult](nil, errs)
 		}
-		
+
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 		workerScheduler.Send(
