@@ -8,6 +8,7 @@ type Condition interface {
 	SetPrev(item Condition)
 	Column() ConditionColumn
 	Operator() ConditionOperator
+	String() string
 }
 
 type ConditionColumn interface {
@@ -104,6 +105,23 @@ func (i *condition) Column() ConditionColumn {
 
 func (i *condition) Operator() ConditionOperator {
 	return i.operator
+}
+
+func (i *condition) String() string {
+	base := ""
+	if i.column != nil {
+		base += i.column.Original() + " "
+	}
+	
+	if i.operator != nil {
+		base += i.operator.Original() + " "
+	}
+
+	if i.value != nil {
+		base += i.value.Original()
+	}
+
+	return base
 }
 
 func NewCondition(column ConditionColumn, operator ConditionOperator, value ConditionValue) Condition {
