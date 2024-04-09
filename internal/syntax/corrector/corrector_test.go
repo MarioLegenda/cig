@@ -118,3 +118,11 @@ func TestCorrectorMultipleInvalidConditions(t *testing.T) {
 	assert.True(t, errors.Is(errs[1], InvalidWhereClause))
 	assert.True(t, errors.Is(errs[2], InvalidWhereClause))
 }
+
+func TestCorrectorMultipleValidConditions(t *testing.T) {
+	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'a' = 'b' AND 'b' != 'a' OR 'c' != 'o' AND 'C' <= 'O'"
+
+	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	assert.Equal(t, 0, len(errs))
+}
