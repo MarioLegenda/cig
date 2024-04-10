@@ -10,44 +10,7 @@ import (
 	"io"
 )
 
-type columnMetadata struct {
-	columnsToReturn []int
-	columnNames     []string
-}
-
-type ColumnMetadata interface {
-	ColumnsToReturn() []int
-	ColumnNames() []string
-	Position(name string) int
-}
-
-func NewColumnMetadata(columnsToReturn []int, columnNames []string) ColumnMetadata {
-	return columnMetadata{
-		columnsToReturn: columnsToReturn,
-		columnNames:     columnNames,
-	}
-}
-
-func (cm columnMetadata) ColumnsToReturn() []int {
-	return cm.columnsToReturn
-}
-
-func (cm columnMetadata) ColumnNames() []string {
-	return cm.columnNames
-}
-
-func (cm columnMetadata) Position(name string) int {
-	names := cm.columnNames
-	for i, n := range names {
-		if n == name {
-			return i
-		}
-	}
-
-	return -1
-}
-
-func Search(columnPosition int, metadata ColumnMetadata, condition syntaxParts.Condition, f io.ReadCloser) JobFn {
+func Search(columnPosition int, metadata conditionResolver.ColumnMetadata, condition syntaxParts.Condition, f io.ReadCloser) JobFn {
 	return func(id int, writer chan result.Result[SearchResult], ctx context.Context) {
 		results := make(SearchResult, 0)
 		lineReader := fs.NewLineReader(f, true)
@@ -97,7 +60,7 @@ func Search(columnPosition int, metadata ColumnMetadata, condition syntaxParts.C
 	}
 }
 
-func createResult(lines []string, metadata ColumnMetadata) map[string]string {
+func createResult(lines []string, metadata conditionResolver.ColumnMetadata) map[string]string {
 	res := make(map[string]string)
 	for _, line := range lines {
 		for _, c := range metadata.ColumnsToReturn() {
