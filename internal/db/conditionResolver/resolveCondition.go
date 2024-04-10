@@ -2,6 +2,7 @@ package conditionResolver
 
 import (
 	"fmt"
+	"github.com/MarioLegenda/cig/internal/db/comparison"
 	"github.com/MarioLegenda/cig/internal/syntax/operators"
 	"github.com/MarioLegenda/cig/internal/syntax/syntaxParts"
 )
@@ -96,21 +97,16 @@ func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, 
 		}
 	}
 
-	for i, t := range ands {
-		if t.op == operators.EqualOperator && t.incomingValue == t.toCompareValue {
-			t.result = true
-			ands[i] = t
-		} else if t.op == operators.UnEqualOperator && t.incomingValue != t.toCompareValue {
-			t.result = true
-			ands[i] = t
-		}
-	}
-
 	if len(ors) == 0 {
-		for _, t := range ands {
-			if !t.result {
-				return false, nil
-			}
+		processables := make([]comparison.Processor, len(ands))
+		for i, t := range ands {
+			processables[i] = comparison.NewProcessable(t.incomingValue, t.toCompareValue, t.op, "")
+		}
+
+		processor := comparison.NewProcessor(processables)
+		ok, err := processor.Process()
+		if !ok || err != nil {
+			return ok, err
 		}
 
 		return true, nil
@@ -118,9 +114,13 @@ func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, 
 
 	if len(ors) != 0 {
 		for _, t := range ors {
-			if t.op == operators.EqualOperator && t.incomingValue == t.toCompareValue {
-				return true, nil
-			} else if t.op == operators.UnEqualOperator && t.incomingValue != t.toCompareValue {
+			processable := comparison.NewProcessable(t.incomingValue, t.toCompareValue, t.op, "")
+			ok, err := processable.Process()
+			if err != nil {
+				return false, err
+			}
+
+			if ok {
 				return true, nil
 			}
 		}
