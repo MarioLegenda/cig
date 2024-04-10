@@ -162,9 +162,9 @@ func createJobColumnMetadata(fsMetadata fileMetadata) conditionResolver.ColumnMe
 	positions := make([]int, len(fsMetadata.columns))
 	columnNames := make([]string, len(fsMetadata.columns))
 
-	for _, m := range fsMetadata.columns {
-		positions = append(positions, m.position)
-		columnNames = append(columnNames, m.name)
+	for i, m := range fsMetadata.columns {
+		positions[i] = m.position
+		columnNames[i] = m.name
 	}
 
 	return conditionResolver.NewColumnMetadata(positions, columnNames)

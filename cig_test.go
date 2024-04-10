@@ -24,7 +24,7 @@ func TestGettingAllResults(t *testing.T) {
 func TestGettingResultsWithSingleWhereClause(t *testing.T) {
 	c := New()
 
-	res := c.Run("SELECT * FROM path:testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC' = 'Level 1'")
+	res := c.Run("SELECT * FROM path:testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC' = 'Level 1' OR 'e.Industry_aggregation_NZSIOC' = 'Level 2'")
 
 	assert.False(t, res.HasErrors())
 	assert.Equal(t, 0, len(res.Errors()))
