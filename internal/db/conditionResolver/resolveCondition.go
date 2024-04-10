@@ -2,7 +2,6 @@ package conditionResolver
 
 import (
 	"fmt"
-	"github.com/MarioLegenda/cig/internal/job"
 	"github.com/MarioLegenda/cig/internal/syntax/operators"
 	"github.com/MarioLegenda/cig/internal/syntax/syntaxParts"
 )
@@ -34,7 +33,7 @@ func (v value) ConvertTo() string {
 }
 
 // good enough for now
-func ResolveCondition(condition syntaxParts.Condition, metadata job.ColumnMetadata, lines []string) (bool, error) {
+func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, lines []string) (bool, error) {
 	ands := make([]cond, 0)
 	ors := make([]cond, 0)
 
@@ -75,6 +74,16 @@ func ResolveCondition(condition syntaxParts.Condition, metadata job.ColumnMetada
 					op:             head.Operator().ConditionType(),
 				})
 			}
+
+			if prevOp == operators.OrOperator {
+				ands = append(ands, cond{
+					toCompareValue: lines[p],
+					incomingValue:  head.Value().Value(),
+					op:             head.Operator().ConditionType(),
+				})
+			}
+
+			break
 		}
 	}
 

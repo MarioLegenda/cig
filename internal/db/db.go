@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"github.com/MarioLegenda/cig/internal/db/conditionResolver"
 	"github.com/MarioLegenda/cig/internal/db/fs"
 	job2 "github.com/MarioLegenda/cig/internal/job"
 	"github.com/MarioLegenda/cig/internal/scheduler"
@@ -157,16 +158,16 @@ func readColumns(f io.Reader) (metadataColumns, error) {
 	return columns, nil
 }
 
-func createJobColumnMetadata(fsMetadata fileMetadata) job2.ColumnMetadata {
+func createJobColumnMetadata(fsMetadata fileMetadata) conditionResolver.ColumnMetadata {
 	positions := make([]int, len(fsMetadata.columns))
 	columnNames := make([]string, len(fsMetadata.columns))
-	d
+
 	for _, m := range fsMetadata.columns {
 		positions = append(positions, m.position)
 		columnNames = append(columnNames, m.name)
 	}
 
-	return job2.NewColumnMetadata(positions, columnNames)
+	return conditionResolver.NewColumnMetadata(positions, columnNames)
 }
 
 func processResults(schedulerResults []result.Result[job2.SearchResult]) (job2.SearchResult, []error) {
