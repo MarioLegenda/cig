@@ -117,9 +117,7 @@ func resolveWhereClause(chunks []string) syntaxParts.Condition {
 				split := strings.Split(originalColumn[1:len(originalColumn)-1], ".")
 
 				head = syntaxParts.NewCondition(
-					syntaxParts.NewConditionColumn(split[0], split[1],
-						originalColumn,
-					),
+					syntaxParts.NewConditionColumn(split[0], split[1], originalColumn),
 					syntaxParts.NewConditionOperator(parts[1], parts[1]),
 					syntaxParts.NewConditionValue(parts[2][1:len(parts[2])-1], parts[2]),
 				)
@@ -128,9 +126,7 @@ func resolveWhereClause(chunks []string) syntaxParts.Condition {
 				split := strings.Split(originalColumn[1:len(originalColumn)-1], ".")
 
 				t := syntaxParts.NewCondition(
-					syntaxParts.NewConditionColumn(split[0], split[1],
-						originalColumn,
-					),
+					syntaxParts.NewConditionColumn(split[0], split[1], originalColumn),
 					syntaxParts.NewConditionOperator(parts[1], parts[1]),
 					syntaxParts.NewConditionValue(parts[2][1:len(parts[2])-1], parts[2]),
 				)
