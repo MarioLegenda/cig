@@ -52,19 +52,12 @@ func (d *db) Run(s syntax.Structure) result.Result[job2.SearchResult] {
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 
-		clm := s.Condition().Column().Column()
-		columnPosition := d.files[file.Alias()].columns.getPositionByName(clm)
-		if columnPosition == -1 {
-			errs = append(errs, fmt.Errorf("Cannot find column position for %s in where clause. Are you sure this column exists?", clm))
-			return result.NewResult[job2.SearchResult](nil, errs)
-		}
-
 		workerScheduler.Send(
 			jobId,
 			job2.Search(
 				-1,
 				jobColumnMetadata,
-				job2.NewOperator(s.Condition().Value().Value(), s.Condition().Operator().ConditionType(), columnPosition),
+				s.Condition(),
 				fileHandler,
 			),
 			ctx,
@@ -167,7 +160,7 @@ func readColumns(f io.Reader) (metadataColumns, error) {
 func createJobColumnMetadata(fsMetadata fileMetadata) job2.ColumnMetadata {
 	positions := make([]int, len(fsMetadata.columns))
 	columnNames := make([]string, len(fsMetadata.columns))
-
+	d
 	for _, m := range fsMetadata.columns {
 		positions = append(positions, m.position)
 		columnNames = append(columnNames, m.name)
