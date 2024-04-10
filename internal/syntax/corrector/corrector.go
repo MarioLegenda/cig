@@ -3,6 +3,7 @@ package corrector
 import (
 	"errors"
 	"fmt"
+	"github.com/MarioLegenda/cig/internal/syntax/dataTypes"
 	"github.com/MarioLegenda/cig/internal/syntax/operators"
 	"github.com/MarioLegenda/cig/internal/syntax/splitter"
 	"os"
@@ -17,6 +18,7 @@ var InvalidFilePathChunk = errors.New("Expected 'path:path_to_file' but did not 
 var InvalidFilePath = errors.New("Invalid file path.")
 var InvalidWhereClause = errors.New("Invalid WHERE clause.")
 var InvalidValueChuck = errors.New("Invalid value chunk.")
+var InvalidDataType = errors.New("Invalid data type.")
 
 func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 	chunks := s.Chunks()
@@ -110,6 +112,10 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 					errs = append(errs, err)
 				}
 
+				if err := checkDataTypeValidIfExists(condition[2]); err != nil {
+					errs = append(errs, err)
+				}
+
 				for i := 0; i < len(condition); i++ {
 					condition[0] = ""
 				}
@@ -155,4 +161,21 @@ func checkIsQuoteEnclosed(v, t string) error {
 	}
 
 	return nil
+}
+
+func checkDataTypeValidIfExists(v string) error {
+	split := strings.Split(v, "::")
+
+	if len(split) == 1 {
+		return nil
+	}
+
+	dt := split[1]
+	for _, t := range dataTypes.DataTypes {
+		if t == dt {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("Invalid data type. Type %s does not exist. Valid conversion data types are %s: %w", dt, strings.Join(dataTypes.DataTypes, ","), InvalidDataType)
 }

@@ -1,5 +1,7 @@
 package syntaxParts
 
+import "strings"
+
 type Condition interface {
 	Value() ConditionValue
 	Next() Condition
@@ -112,7 +114,7 @@ func (i *condition) String() string {
 	if i.column != nil {
 		base += i.column.Original() + " "
 	}
-	
+
 	if i.operator != nil {
 		base += i.operator.Original() + " "
 	}
@@ -143,6 +145,7 @@ func NewConditionColumn(alias, column, original string) ConditionColumn {
 }
 
 func NewConditionOperator(t, original string) ConditionOperator {
+	strings.Split(original, "::")
 	return conditionOperator{
 		original:      original,
 		conditionType: t,
