@@ -32,7 +32,7 @@ func (v value) ConvertTo() string {
 	return ""
 }
 
-// good enough for now
+// good enough for now, technically incorrect
 func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, lines []string) (bool, error) {
 	ands := make([]cond, 0)
 	ors := make([]cond, 0)
@@ -54,19 +54,28 @@ func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, 
 					incomingValue:  head.Value().Value(),
 					op:             head.Operator().ConditionType(),
 				})
+				prevOp = operators.AndOperator
 			} else if next.Operator().ConditionType() == operators.OrOperator {
-				ands = append(ors, cond{
+				ors = append(ors, cond{
 					toCompareValue: lines[p],
 					incomingValue:  head.Value().Value(),
 					op:             head.Operator().Original(),
 				})
+				prevOp = operators.OrOperator
 			}
 
-			prevOp = head.Operator().ConditionType()
 			// skip operator
 			head = head.Next().Next()
 			// is this the last item?
 		} else if next == nil {
+			if prevOp == "" {
+				ands = append(ands, cond{
+					toCompareValue: lines[p],
+					incomingValue:  head.Value().Value(),
+					op:             head.Operator().ConditionType(),
+				})
+			}
+
 			if prevOp == operators.AndOperator {
 				ands = append(ands, cond{
 					toCompareValue: lines[p],
@@ -76,7 +85,7 @@ func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, 
 			}
 
 			if prevOp == operators.OrOperator {
-				ands = append(ands, cond{
+				ors = append(ors, cond{
 					toCompareValue: lines[p],
 					incomingValue:  head.Value().Value(),
 					op:             head.Operator().ConditionType(),
@@ -87,11 +96,13 @@ func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, 
 		}
 	}
 
-	for _, t := range ands {
+	for i, t := range ands {
 		if t.op == operators.EqualOperator && t.incomingValue == t.toCompareValue {
 			t.result = true
+			ands[i] = t
 		} else if t.op == operators.UnEqualOperator && t.incomingValue != t.toCompareValue {
 			t.result = true
+			ands[i] = t
 		}
 	}
 
@@ -105,7 +116,7 @@ func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, 
 		return true, nil
 	}
 
-	if len(ors) == 0 {
+	if len(ors) != 0 {
 		for _, t := range ors {
 			if t.op == operators.EqualOperator && t.incomingValue == t.toCompareValue {
 				return true, nil
