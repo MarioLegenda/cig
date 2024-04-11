@@ -7,30 +7,12 @@ import (
 	"github.com/MarioLegenda/cig/internal/syntax/syntaxParts"
 )
 
-type value struct {
-	value     string
-	convertTo string
-}
-
 type cond struct {
 	incomingValue  string
 	toCompareValue string
 	op             string
+	dataType       string
 	result         bool
-}
-
-type Value interface {
-	Value() string
-	ConvertTo() string
-}
-
-func (v value) Value() string {
-	return v.value
-}
-
-// TODO: convert to other primitive data types here, not yet implemented
-func (v value) ConvertTo() string {
-	return ""
 }
 
 // good enough for now, technically incorrect
@@ -52,6 +34,7 @@ func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, 
 			if next.Operator().ConditionType() == operators.AndOperator {
 				ands = append(ands, cond{
 					toCompareValue: lines[p],
+					dataType:       head.Column().DataType(),
 					incomingValue:  head.Value().Value(),
 					op:             head.Operator().ConditionType(),
 				})
@@ -59,6 +42,7 @@ func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, 
 			} else if next.Operator().ConditionType() == operators.OrOperator {
 				ors = append(ors, cond{
 					toCompareValue: lines[p],
+					dataType:       head.Column().DataType(),
 					incomingValue:  head.Value().Value(),
 					op:             head.Operator().Original(),
 				})
@@ -72,6 +56,7 @@ func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, 
 			if prevOp == "" {
 				ands = append(ands, cond{
 					toCompareValue: lines[p],
+					dataType:       head.Column().DataType(),
 					incomingValue:  head.Value().Value(),
 					op:             head.Operator().ConditionType(),
 				})
@@ -80,6 +65,7 @@ func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, 
 			if prevOp == operators.AndOperator {
 				ands = append(ands, cond{
 					toCompareValue: lines[p],
+					dataType:       head.Column().DataType(),
 					incomingValue:  head.Value().Value(),
 					op:             head.Operator().ConditionType(),
 				})
@@ -88,6 +74,7 @@ func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, 
 			if prevOp == operators.OrOperator {
 				ors = append(ors, cond{
 					toCompareValue: lines[p],
+					dataType:       head.Column().DataType(),
 					incomingValue:  head.Value().Value(),
 					op:             head.Operator().ConditionType(),
 				})
@@ -100,7 +87,7 @@ func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, 
 	if len(ors) == 0 {
 		processables := make([]comparison.Processor, len(ands))
 		for i, t := range ands {
-			processables[i] = comparison.NewProcessable(t.incomingValue, t.toCompareValue, t.op, "")
+			processables[i] = comparison.NewProcessable(t.incomingValue, t.toCompareValue, t.op, t.dataType)
 		}
 
 		processor := comparison.NewProcessor(processables)
@@ -114,7 +101,7 @@ func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, 
 
 	if len(ors) != 0 {
 		for _, t := range ors {
-			processable := comparison.NewProcessable(t.incomingValue, t.toCompareValue, t.op, "")
+			processable := comparison.NewProcessable(t.incomingValue, t.toCompareValue, t.op, t.dataType)
 			ok, err := processable.Process()
 			if err != nil {
 				return false, err
