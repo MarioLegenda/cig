@@ -17,6 +17,7 @@ type ConditionColumn interface {
 	Alias() string
 	Column() string
 	Original() string
+	DataType() string
 }
 
 type ConditionOperator interface {
@@ -40,6 +41,7 @@ type condition struct {
 type conditionColumn struct {
 	alias    string
 	column   string
+	dataType string
 	original string
 }
 
@@ -53,6 +55,10 @@ func (cc conditionColumn) Column() string {
 
 func (cc conditionColumn) Original() string {
 	return cc.original
+}
+
+func (cc conditionColumn) DataType() string {
+	return cc.dataType
 }
 
 type conditionOperator struct {
@@ -136,8 +142,9 @@ func NewCondition(column ConditionColumn, operator ConditionOperator, value Cond
 	}
 }
 
-func NewConditionColumn(alias, column, original string) ConditionColumn {
+func NewConditionColumn(alias, column, dataType, original string) ConditionColumn {
 	return conditionColumn{
+		dataType: dataType,
 		alias:    alias,
 		column:   column,
 		original: original,
