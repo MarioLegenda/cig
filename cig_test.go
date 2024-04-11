@@ -24,7 +24,20 @@ func TestGettingAllResults(t *testing.T) {
 func TestGettingResultsWithSingleWhereClause(t *testing.T) {
 	c := New()
 
-	res := c.Run("SELECT * FROM path:testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC' = 'Level 1' OR 'e.Industry_aggregation_NZSIOC' = 'Level 2' AND 'e.Year' = '2021'")
+	res := c.Run("SELECT * FROM path:testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC' = 'Level 1' OR 'e.Industry_aggregation_NZSIOC' = 'Level 2' AND 'e.Year'::int = '2021'")
+
+	assert.False(t, res.HasErrors())
+	assert.Equal(t, 0, len(res.Errors()))
+
+	foundResults := res.Result()
+
+	assert.Equal(t, 2511, len(foundResults))
+}
+
+func TestGettingResultsWithDataConversion(t *testing.T) {
+	c := New()
+
+	res := c.Run("SELECT * FROM path:testdata/example.csv AS e WHERE 'e.Year'::int > '2013'")
 
 	assert.False(t, res.HasErrors())
 	assert.Equal(t, 0, len(res.Errors()))
