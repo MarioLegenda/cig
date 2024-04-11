@@ -1,6 +1,7 @@
 package comparison
 
 import (
+	"fmt"
 	"github.com/MarioLegenda/cig/internal/syntax/dataTypes"
 	"github.com/MarioLegenda/cig/internal/syntax/operators"
 	"strconv"
@@ -36,7 +37,7 @@ func (p processable) Process() (bool, error) {
 		return compareGreaterThanOrEqual(p.dataType, p.incomingValue, p.conditionValue)
 	}
 
-	return false, nil
+	return false, fmt.Errorf("Internal error. Could not match condition operator %s with any of valid operators", p.op)
 }
 
 func (p processor) Process() (bool, error) {
@@ -54,7 +55,7 @@ func NewProcessor(processables []Processor) Processor {
 	return processor{processables: processables}
 }
 
-func NewProcessable(incomingValue, conditionValue, op, dataType string) Processor {
+func NewProcessable(conditionValue, incomingValue, op, dataType string) Processor {
 	return processable{
 		incomingValue:  incomingValue,
 		conditionValue: conditionValue,

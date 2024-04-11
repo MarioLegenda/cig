@@ -44,7 +44,7 @@ func TestGettingResultsWithDataConversion(t *testing.T) {
 
 	foundResults := res.Result()
 
-	assert.Equal(t, 2511, len(foundResults))
+	assert.Equal(t, 18540, len(foundResults))
 }
 
 func TestParallelRun(t *testing.T) {
