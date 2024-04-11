@@ -2,7 +2,6 @@ package corrector
 
 import (
 	"errors"
-	"fmt"
 	"github.com/MarioLegenda/cig/internal/syntax/splitter"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -12,8 +11,6 @@ func TestCorrectorIsCorrect(t *testing.T) {
 	sql := "SELECT * FROM path:../../../testdata/example.csv AS g WHERE 'g.Area' = 'A100100' AND 'g.Locale' != '45' OR 'g.Field' <= '23'"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
-
-	fmt.Print(errs)
 
 	assert.Equal(t, 0, len(errs))
 }
@@ -128,12 +125,21 @@ func TestCorrectorMultipleValidConditions(t *testing.T) {
 }
 
 func TestIncorrectDataType(t *testing.T) {
-	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'a' = 'b' AND 'b' != 'a' OR 'c' != 'o' AND 'C' <= 'O'::unrecognized"
+	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'a'::unrecognized = 'b' AND 'b'::unrecognized != 'a' OR 'c'::unrecognized != 'o' AND 'C'::unrecognized <= 'O'"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
 
-	fmt.Println(errs)
+	assert.Equal(t, 4, len(errs))
 
-	assert.Equal(t, 1, len(errs))
-	assert.True(t, errors.Is(errs[0], InvalidDataType))
+	for _, e := range errs {
+		assert.True(t, errors.Is(e, InvalidDataType))
+	}
+}
+
+func TestValidateDataTypes(t *testing.T) {
+	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'a'::int = 'b' AND 'b'::float != 'a' OR 'c'::int != 'o' AND 'C'::float <= 'O'"
+
+	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	assert.Equal(t, 0, len(errs))
 }

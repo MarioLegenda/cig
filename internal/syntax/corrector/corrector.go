@@ -104,15 +104,15 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 					errs = append(errs, err)
 				}
 
+				if err := checkDataTypeValidIfExists(condition[0]); err != nil {
+					errs = append(errs, err)
+				}
+
 				if err := checkConditionalOperator(condition[1]); err != nil {
 					errs = append(errs, err)
 				}
 
 				if err := checkIsQuoteEnclosed(condition[2], "value"); err != nil {
-					errs = append(errs, err)
-				}
-
-				if err := checkDataTypeValidIfExists(condition[2]); err != nil {
 					errs = append(errs, err)
 				}
 
@@ -156,6 +156,12 @@ func checkLogicalOperator(op string) error {
 }
 
 func checkIsQuoteEnclosed(v, t string) error {
+	split := strings.Split(v, "::")
+
+	if len(split) == 2 {
+		v = split[0]
+	}
+
 	if v[0] != '\'' || v[len(v)-1] != '\'' {
 		return fmt.Errorf("Invalid %s value. Comparison values should be enclosed in single quotes: %w", t, InvalidValueChuck)
 	}

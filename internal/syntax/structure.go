@@ -113,20 +113,20 @@ func resolveWhereClause(chunks []string) syntaxParts.Condition {
 			position = 0
 
 			if head == nil {
-				originalColumn := parts[0]
-				split := strings.Split(originalColumn[1:len(originalColumn)-1], ".")
+				columnOnly, dataType := getColumnDataOnlyIfDataTypeExists(parts[0])
+				aliasSplit := strings.Split(columnOnly[1:len(columnOnly)-1], ".")
 
 				head = syntaxParts.NewCondition(
-					syntaxParts.NewConditionColumn(split[0], split[1], originalColumn),
+					syntaxParts.NewConditionColumn(aliasSplit[0], aliasSplit[1], dataType, parts[0]),
 					syntaxParts.NewConditionOperator(parts[1], parts[1]),
 					syntaxParts.NewConditionValue(parts[2][1:len(parts[2])-1], parts[2]),
 				)
 			} else if head != nil && next != nil {
-				originalColumn := parts[0]
-				split := strings.Split(originalColumn[1:len(originalColumn)-1], ".")
+				columnOnly, dataType := getColumnDataOnlyIfDataTypeExists(parts[0])
+				aliasSplit := strings.Split(columnOnly[1:len(columnOnly)-1], ".")
 
 				t := syntaxParts.NewCondition(
-					syntaxParts.NewConditionColumn(split[0], split[1], originalColumn),
+					syntaxParts.NewConditionColumn(aliasSplit[0], aliasSplit[1], dataType, parts[0]),
 					syntaxParts.NewConditionOperator(parts[1], parts[1]),
 					syntaxParts.NewConditionValue(parts[2][1:len(parts[2])-1], parts[2]),
 				)
@@ -146,4 +146,13 @@ func resolveWhereClause(chunks []string) syntaxParts.Condition {
 	}
 
 	return head
+}
+
+func getColumnDataOnlyIfDataTypeExists(column string) (string, string) {
+	split := strings.Split(column, "::")
+	if len(split) == 2 {
+		return split[0], split[1]
+	}
+
+	return column, ""
 }
