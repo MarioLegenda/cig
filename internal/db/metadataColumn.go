@@ -16,3 +16,12 @@ func (mcs metadataColumns) getPositionByName(name string) int {
 
 	return -1
 }
+
+func (mcs metadataColumns) Names() []string {
+	names := make([]string, len(mcs))
+	for i, m := range mcs {
+		names[i] = m.name
+	}
+
+	return names
+}
