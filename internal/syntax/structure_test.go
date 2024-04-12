@@ -40,8 +40,8 @@ func TestStructureWithMultipleConditions(t *testing.T) {
 	assert.Equal(t, false, res.HasErrors())
 	assert.Nil(t, res.Errors())
 
-	assert.True(t, res.Result().Column().HasColumn("e.Industry_aggregation_NZSIOC") != -1)
-	assert.True(t, res.Result().Column().HasColumn("e.Year") != -1)
+	assert.True(t, res.Result().Column().HasColumn("e.Industry_aggregation_NZSIOC"))
+	assert.True(t, res.Result().Column().HasColumn("e.Year"))
 	assert.Equal(t, len(res.Result().Column().Columns()), 2)
 
 	head := res.Result().Condition()
