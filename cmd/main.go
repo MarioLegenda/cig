@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"github.com/MarioLegenda/cig"
 	"io"
 )
@@ -23,11 +24,11 @@ func main() {
 }
 
 func tryCig() {
-	sql := "SELECT      'g.Year',         'e.Industry_aggregation_NZSIOC',         'z.Industry_code_NZSIOC'      FROM path:../../../testdata/example.csv As g WHERE 'a'::int = 'b' AND 'b'::float != 'a' OR 'c'::int != 'o' AND 'C'::float <= 'O'"
-
 	c := cig.New()
 
-	c.Run(sql)
+	result := c.Run("SELECT 'e.Industry_aggregation_NZSIOC','e.Year' FROM path:../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC' = 'Level 1' OR 'e.Industry_aggregation_NZSIOC' = 'Level 2' AND 'e.Year'::int = '2021'")
+
+	fmt.Println(result.Errors())
 }
 
 func NewLineReader(f io.Reader, skipColumns bool) func() ([]string, error) {

@@ -33,12 +33,16 @@ func TestStructureValid(t *testing.T) {
 }
 
 func TestStructureWithMultipleConditions(t *testing.T) {
-	sql := "SELECT * FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::int = 'Level 1' AND 'e.Year' != '2021' OR 'e.Industry_aggregation_NZSIOC'::float = 'Level 3' OR 'e.Variable_code'::string <= 'some value'"
+	sql := "SELECT 'e.Industry_aggregation_NZSIOC','e.Year' FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::int = 'Level 1' AND 'e.Year' != '2021' OR 'e.Industry_aggregation_NZSIOC'::float = 'Level 3' OR 'e.Variable_code'::string <= 'some value'"
 
 	res := NewStructure(sql)
 
 	assert.Equal(t, false, res.HasErrors())
 	assert.Nil(t, res.Errors())
+
+	assert.True(t, res.Result().Column().HasColumn("e.Industry_aggregation_NZSIOC") != -1)
+	assert.True(t, res.Result().Column().HasColumn("e.Year") != -1)
+	assert.Equal(t, len(res.Result().Column().Columns()), 2)
 
 	head := res.Result().Condition()
 	assert.Equal(t, head.Column().Original(), "'e.Industry_aggregation_NZSIOC'::int")
