@@ -84,7 +84,7 @@ func TestInCorrectorWhereClause(t *testing.T) {
 }
 
 func TestInCorrectorWhereClauseOperator(t *testing.T) {
-	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'a' & 'b'"
+	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.a' & 'g.b'"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
 
@@ -94,7 +94,7 @@ func TestInCorrectorWhereClauseOperator(t *testing.T) {
 }
 
 func TestInCorrectorWhereClauseValue(t *testing.T) {
-	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'a' = 'b"
+	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.a' = 'b"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
 
@@ -104,7 +104,7 @@ func TestInCorrectorWhereClauseValue(t *testing.T) {
 }
 
 func TestCorrectorMultipleInvalidConditions(t *testing.T) {
-	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'a' = 'b' AD 'b' != 'a' OT 'c' != 'o' BSK 'C' <= 'O'"
+	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.a' = 'b' AD 'g.b' != 'a' OT 'g.c' != 'o' BSK 'g.C' <= 'O'"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
 
@@ -116,7 +116,7 @@ func TestCorrectorMultipleInvalidConditions(t *testing.T) {
 }
 
 func TestCorrectorMultipleValidConditions(t *testing.T) {
-	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'a' = 'b' AND 'b' != 'a' OR 'c' != 'o' AND 'C' <= 'O'"
+	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.a' = 'b' AND 'g.b' != 'a' OR 'g.c' != 'o' AND 'g.C' <= 'O'"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
 
@@ -124,7 +124,7 @@ func TestCorrectorMultipleValidConditions(t *testing.T) {
 }
 
 func TestIncorrectDataType(t *testing.T) {
-	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'a'::unrecognized = 'b' AND 'b'::unrecognized != 'a' OR 'c'::unrecognized != 'o' AND 'C'::unrecognized <= 'O'"
+	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.a'::unrecognized = 'b' AND 'g.b'::unrecognized != 'a' OR 'g.c'::unrecognized != 'o' AND 'g.C'::unrecognized <= 'O'"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
 
@@ -136,7 +136,7 @@ func TestIncorrectDataType(t *testing.T) {
 }
 
 func TestValidateDataTypes(t *testing.T) {
-	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'a'::int = 'b' AND 'b'::float != 'a' OR 'c'::int != 'o' AND 'C'::float <= 'O'"
+	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.a'::int = 'b' AND 'g.b'::float != 'a' OR 'g.c'::int != 'o' AND 'g.C'::float <= 'O'"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
 
@@ -144,9 +144,21 @@ func TestValidateDataTypes(t *testing.T) {
 }
 
 func TestValidateColumnAlias(t *testing.T) {
-	sql := "SELECT      'g.Year',         'e.Industry_aggregation_NZSIOC',         'z.Industry_code_NZSIOC'      FROM path:../../../testdata/example.csv As g WHERE 'a'::int = 'b' AND 'b'::float != 'a' OR 'c'::int != 'o' AND 'C'::float <= 'O'"
+	sql := "SELECT      'g.Year',         'e.Industry_aggregation_NZSIOC',         'z.Industry_code_NZSIOC'      FROM path:../../../testdata/example.csv As g WHERE 'g.a'::int = 'b' AND 'g.b'::float != 'a' OR 'g.c'::int != 'o' AND 'g.C'::float <= 'O'"
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
 
 	assert.Equal(t, 2, len(errs))
+}
+
+func TestValidAliasInConditions(t *testing.T) {
+	sql := "SELECT      'g.Year',         'g.Industry_aggregation_NZSIOC',         'g.Industry_code_NZSIOC'      FROM path:../../../testdata/example.csv As g WHERE 'z.a'::int = 'b' AND 'z.b'::float != 'a' OR 'z.c'::int != 'o' AND 'z.C'::float <= 'O'"
+
+	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	assert.Equal(t, 4, len(errs))
+
+	for _, k := range errs {
+		assert.True(t, errors.Is(k, InvalidConditionAlias))
+	}
 }
