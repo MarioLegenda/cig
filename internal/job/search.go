@@ -10,7 +10,7 @@ import (
 	"io"
 )
 
-func Search(columnPosition int, metadata conditionResolver.ColumnMetadata, condition syntaxParts.Condition, f io.ReadCloser) JobFn {
+func Search(selectedColumns []int, metadata conditionResolver.ColumnMetadata, condition syntaxParts.Condition, f io.ReadCloser) JobFn {
 	return func(id int, writer chan result.Result[SearchResult], ctx context.Context) {
 		results := make(SearchResult, 0)
 		lineReader := fs.NewLineReader(f, true)

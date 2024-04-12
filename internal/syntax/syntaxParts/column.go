@@ -5,18 +5,18 @@ type column struct {
 }
 
 type Column interface {
-	HasColumn(column string) int
+	HasColumn(column string) bool
 	Columns() []string
 }
 
-func (c column) HasColumn(search string) int {
-	for i, cl := range c.columns {
+func (c column) HasColumn(search string) bool {
+	for _, cl := range c.columns {
 		if cl == search {
-			return i
+			return true
 		}
 	}
 
-	return -1
+	return false
 }
 
 func (c column) Columns() []string {

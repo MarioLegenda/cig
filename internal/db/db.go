@@ -2,16 +2,11 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"github.com/MarioLegenda/cig/internal/db/conditionResolver"
-	"github.com/MarioLegenda/cig/internal/db/fs"
 	job2 "github.com/MarioLegenda/cig/internal/job"
 	"github.com/MarioLegenda/cig/internal/scheduler"
 	"github.com/MarioLegenda/cig/internal/syntax"
-	"github.com/MarioLegenda/cig/internal/syntax/syntaxParts"
 	"github.com/MarioLegenda/cig/pkg/result"
-	"io"
-	"os"
 	"time"
 )
 
@@ -39,7 +34,8 @@ func (d *db) Run(s syntax.Structure) result.Result[job2.SearchResult] {
 		return result.NewResult[job2.SearchResult](nil, errs)
 	}
 
-	jobColumnMetadata := createJobColumnMetadata(d.files[file.Alias()])
+	conditionColumnMetadata := createConditionColumnMetadata(d.files[file.Alias()])
+	selectedColumns := getSelectedColumns(s, d.files[file.Alias()])
 
 	jobId := 0
 	workerScheduler := scheduler.New()
@@ -56,8 +52,8 @@ func (d *db) Run(s syntax.Structure) result.Result[job2.SearchResult] {
 		workerScheduler.Send(
 			jobId,
 			job2.Search(
-				-1,
-				jobColumnMetadata,
+				selectedColumns,
+				conditionColumnMetadata,
 				s.Condition(),
 				fileHandler,
 			),
@@ -74,8 +70,8 @@ func (d *db) Run(s syntax.Structure) result.Result[job2.SearchResult] {
 		workerScheduler.Send(
 			jobId,
 			job2.Search(
-				-1,
-				jobColumnMetadata,
+				selectedColumns,
+				conditionColumnMetadata,
 				nil,
 				fileHandler,
 			),
@@ -107,58 +103,7 @@ func New() DB {
 	return &db{files: make(map[string]fileMetadata)}
 }
 
-func assignColumns(alias, f string, d *db) error {
-	if _, ok := d.files[alias]; ok {
-		return nil
-	}
-
-	r, err := openFile(f)
-	if err != nil {
-		return err
-	}
-	defer r.Close()
-
-	columns, err := readColumns(r)
-	if err != nil {
-		return err
-	}
-
-	d.files[alias] = fileMetadata{
-		columns:      columns,
-		originalPath: f,
-	}
-
-	return nil
-}
-
-func openFile(f string) (io.ReadCloser, error) {
-	r, err := os.Open(f)
-	if err != nil {
-		return nil, err
-	}
-
-	return r, nil
-}
-
-func readColumns(f io.Reader) (metadataColumns, error) {
-	lineReader := fs.NewLineReader(f, false)
-	cls, err := lineReader()
-	if err != nil {
-		return nil, err
-	}
-
-	columns := make(metadataColumns, 0)
-	for i, k := range cls {
-		columns = append(columns, metadataColumn{
-			position: i,
-			name:     k,
-		})
-	}
-
-	return columns, nil
-}
-
-func createJobColumnMetadata(fsMetadata fileMetadata) conditionResolver.ColumnMetadata {
+func createConditionColumnMetadata(fsMetadata fileMetadata) conditionResolver.ColumnMetadata {
 	positions := make([]int, len(fsMetadata.columns))
 	columnNames := make([]string, len(fsMetadata.columns))
 
@@ -168,6 +113,17 @@ func createJobColumnMetadata(fsMetadata fileMetadata) conditionResolver.ColumnMe
 	}
 
 	return conditionResolver.NewColumnMetadata(positions, columnNames)
+}
+
+func getSelectedColumns(structure syntax.Structure, fsMetadata fileMetadata) []int {
+	p := make([]int, 0)
+	for i, c := range fsMetadata.columns {
+		if structure.Column().HasColumn(c.name) {
+			p = append(p, i)
+		}
+	}
+
+	return p
 }
 
 func processResults(schedulerResults []result.Result[job2.SearchResult]) (job2.SearchResult, []error) {
@@ -184,17 +140,4 @@ func processResults(schedulerResults []result.Result[job2.SearchResult]) (job2.S
 	}
 
 	return newResults, nil
-}
-
-func prepareRun(file syntaxParts.FileDB, d *db) (io.ReadCloser, error) {
-	f, err := os.Open(file.Path())
-	if err != nil {
-		return nil, fmt.Errorf("Opening file %s failed with error: %w", file.Path(), err)
-	}
-
-	if err := assignColumns(file.Alias(), file.Path(), d); err != nil {
-		return nil, fmt.Errorf("Opening file %s failed with error: %w", file.Path(), err)
-	}
-
-	return f, nil
 }
