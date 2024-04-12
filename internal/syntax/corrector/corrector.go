@@ -28,19 +28,23 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 	errs := make([]error, 0)
 	chunks := normalizeChunks(s.Chunks())
 
+	// there should be minimally 6 chunks, invalid right away
 	if len(chunks) < 6 {
 		errs = append(errs, InvalidNumberOfChunks)
 		return errs
 	}
 
+	// if the first chunk is not select, invalid
 	if strings.ToLower(chunks[0]) != "select" {
 		errs = append(errs, InvalidSelectChunk)
 	}
 
+	// skip the columns validation for now, and validate that FROM is in the right position
 	if strings.ToLower(chunks[2]) != "from" {
 		errs = append(errs, InvalidFromChunk)
 	}
 
+	// validate csv file path
 	splitPath := strings.Split(chunks[3], ":")
 	if len(splitPath) != 2 {
 		errs = append(errs, InvalidFilePathChunk)
@@ -52,6 +56,7 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 		return errs
 	}
 
+	// get the actual path part and validate that it exists
 	path := splitPath[1]
 	stat, err := os.Stat(path)
 	if err != nil {
@@ -59,39 +64,60 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 		return errs
 	}
 
+	// validate that the file is an actual .csv file
 	nameSplit := strings.Split(stat.Name(), ".")
 	if nameSplit[1] != "csv" {
 		errs = append(errs, fmt.Errorf("File %s is not a csv file or it does not have a csv extension: %w", path, InvalidFilePath))
 	}
 
+	// validate that AS is in the right position
 	if strings.ToLower(chunks[4]) != "as" {
 		errs = append(errs, InvalidAsChunk)
 	}
 
+	// check that selected columns have the right selected alias in AS clause, and validate that there are no duplicated selected columns
 	if aliasErrs := checkAliasAndSelectedColumnDuplicates(chunks[5], chunks[1]); aliasErrs != nil {
 		errs = append(errs, aliasErrs...)
 	}
 
 	alias := chunks[5]
+	// from index 6, there should be a where clause
+	// TODO: must be changed when JOIN comes into play
 	whereClause := chunks[6:]
 
 	if len(whereClause) != 0 {
+		// minimal number of chunks for WHERE clause is 4
 		if len(whereClause) < 4 {
 			errs = append(errs, fmt.Errorf("Expected at least a single condition for WHERE clause but got something else: %w", InvalidWhereClause))
 			return errs
 		}
 
+		// validate actual WHERE clause
 		where := whereClause[0]
 		if strings.ToLower(where) != "where" {
 			errs = append(errs, fmt.Errorf("Expected WHERE, got %s: %w", whereClause[0], InvalidWhereClause))
 		}
 
+		// after WHERE only conditions can be
 		conditionParts := whereClause[1:]
 
+		/**
+			The algorithm iterates over each chunks of the condition. Condition is everything between
+		    AND and OR operators. If the algorithm expects a condition, isDiscoveryMode will be true.
+			If it expects an operator, it is false. Based on this flag, the algorithm will either validate
+			the logical operator or the condition.
+
+			Since conditionParts is an array simply split by an empty space, condition will be a combination
+			of 3 array indexes. If the algorithm expects a condition, it will count those positions. That is the
+			job of the position variable. This variable is incremented every time the algorithm expects a part of
+			the condition and that part is saved into condition [3]string. Number of condition parts is to. After
+			sufficient number of parts is found, the entire condition is validated.
+		*/
 		isDiscoveryMode := true
 		var condition [3]string
 		position := 0
 		for _, k := range conditionParts {
+			// logical operator expected and validated
 			if !isDiscoveryMode {
 				if err := checkLogicalOperator(k); err != nil {
 					errs = append(errs, err)
@@ -101,10 +127,12 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 				continue
 			}
 
+			// save the condition parts until there are 3 of them (position variable)
 			if isDiscoveryMode {
 				condition[position] = k
 			}
 
+			// all condition parts have been collected. validate the entire condition.
 			if position == 2 {
 				isDiscoveryMode = false
 				position = 0
@@ -136,6 +164,9 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 				continue
 			}
 
+			// this variable is only incremented if isDiscoveryMode = true which means
+			// that the algorithm is collecting condition parts. It is reset to 0 (zero)
+			// when the algorithm finds a logical operator
 			position++
 		}
 	}
