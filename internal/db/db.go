@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"github.com/MarioLegenda/cig/internal/db/conditionResolver"
+	"github.com/MarioLegenda/cig/internal/db/selectedColumnMetadata"
 	job2 "github.com/MarioLegenda/cig/internal/job"
 	"github.com/MarioLegenda/cig/internal/scheduler"
 	"github.com/MarioLegenda/cig/internal/syntax"
@@ -35,7 +36,7 @@ func (d *db) Run(s syntax.Structure) result.Result[job2.SearchResult] {
 	}
 
 	conditionColumnMetadata := createConditionColumnMetadata(d.files[file.Alias()])
-	selectedColumns := getSelectedColumns(s, d.files[file.Alias()])
+	selectedColumns := createSelectedColumnMetadata(s, d.files[file.Alias()])
 
 	jobId := 0
 	workerScheduler := scheduler.New()
@@ -115,15 +116,8 @@ func createConditionColumnMetadata(fsMetadata fileMetadata) conditionResolver.Co
 	return conditionResolver.NewColumnMetadata(positions, columnNames)
 }
 
-func getSelectedColumns(structure syntax.Structure, fsMetadata fileMetadata) []int {
-	p := make([]int, 0)
-	for i, c := range fsMetadata.columns {
-		if structure.Column().HasColumn(c.name) {
-			p = append(p, i)
-		}
-	}
-
-	return p
+func createSelectedColumnMetadata(structure syntax.Structure, fsMetadata fileMetadata) selectedColumnMetadata.ColumnMetadata {
+	return selectedColumnMetadata.New(structure.Column().Columns(), fsMetadata.columns.Names())
 }
 
 func processResults(schedulerResults []result.Result[job2.SearchResult]) (job2.SearchResult, []error) {

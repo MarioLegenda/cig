@@ -47,6 +47,48 @@ func TestGettingResultsWithDataConversion(t *testing.T) {
 	assert.Equal(t, 18540, len(foundResults))
 }
 
+func TestGettingResultsOfASingleSelectedColumn(t *testing.T) {
+	c := New()
+
+	res := c.Run("SELECT 'e.Year' FROM path:testdata/example.csv AS e WHERE 'e.Year'::int > '2013'")
+
+	assert.False(t, res.HasErrors())
+	assert.Equal(t, 0, len(res.Errors()))
+
+	foundResults := res.Result()
+
+	for _, singleResult := range foundResults {
+		assert.Equal(t, len(singleResult), 1)
+		assert.Contains(t, singleResult, "Year")
+	}
+
+	assert.Equal(t, 18540, len(foundResults))
+}
+
+func TestGettingResultsOfMultipleSelectedColumn(t *testing.T) {
+	c := New()
+
+	res := c.Run("SELECT 'e.Year','e.Industry_aggregation_NZSIOC','e.Industry_code_NZSIOC' FROM path:testdata/example.csv AS e WHERE 'e.Year'::int > '2013'")
+
+	assert.False(t, res.HasErrors())
+	assert.Equal(t, 0, len(res.Errors()))
+
+	foundResults := res.Result()
+
+	for _, singleResult := range foundResults {
+		assert.Equal(t, len(singleResult), 3)
+		assert.Contains(t, singleResult, "Year")
+		assert.Contains(t, singleResult, "Industry_aggregation_NZSIOC")
+		assert.Contains(t, singleResult, "Industry_code_NZSIOC")
+
+		assert.NotEmpty(t, singleResult["Year"])
+		assert.NotEmpty(t, singleResult["Industry_aggregation_NZSIOC"])
+		assert.NotEmpty(t, singleResult["Industry_code_NZSIOC"])
+	}
+
+	assert.Equal(t, 18540, len(foundResults))
+}
+
 func TestParallelRun(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	c := New()

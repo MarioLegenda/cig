@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"github.com/MarioLegenda/cig/internal/db/conditionResolver"
 	"github.com/MarioLegenda/cig/internal/db/fs"
+	"github.com/MarioLegenda/cig/internal/db/selectedColumnMetadata"
 	"github.com/MarioLegenda/cig/internal/syntax/syntaxParts"
 	"github.com/MarioLegenda/cig/pkg/result"
 	"io"
 )
 
-func Search(selectedColumns []int, metadata conditionResolver.ColumnMetadata, condition syntaxParts.Condition, f io.ReadCloser) JobFn {
+func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata conditionResolver.ColumnMetadata, condition syntaxParts.Condition, f io.ReadCloser) JobFn {
 	return func(id int, writer chan result.Result[SearchResult], ctx context.Context) {
 		results := make(SearchResult, 0)
 		lineReader := fs.NewLineReader(f, true)
@@ -50,24 +51,45 @@ func Search(selectedColumns []int, metadata conditionResolver.ColumnMetadata, co
 					}
 
 					if ok {
-						results = append(results, createResult(lines, metadata))
+						res, err := createResult(lines, selectedColumns)
+						if err != nil {
+							writer <- result.NewResult[SearchResult](nil, []error{
+								fmt.Errorf("Error in job %d while reading from the file: %w", id, err),
+							})
+
+							return
+						}
+
+						results = append(results, res)
 					}
 				} else {
-					results = append(results, createResult(lines, metadata))
+					res, err := createResult(lines, selectedColumns)
+					if err != nil {
+						writer <- result.NewResult[SearchResult](nil, []error{
+							fmt.Errorf("Error in job %d while reading from the file: %w", id, err),
+						})
+
+						return
+					}
+
+					results = append(results, res)
 				}
 			}
 		}
 	}
 }
 
-func createResult(lines []string, metadata conditionResolver.ColumnMetadata) map[string]string {
+func createResult(lines []string, selectedColumns selectedColumnMetadata.ColumnMetadata) (map[string]string, error) {
 	res := make(map[string]string)
-	for _, line := range lines {
-		for _, c := range metadata.ColumnsToReturn() {
-			columnName := metadata.ColumnNames()[c]
+	for linePosition, line := range lines {
+		if selectedColumns.HasPosition(linePosition) {
+			columnName := selectedColumns.Column(linePosition)
+			if columnName == "" {
+				return nil, fmt.Errorf("Column not found for position %d. This should not happen and is a bug", linePosition)
+			}
 			res[columnName] = line
 		}
 	}
 
-	return res
+	return res, nil
 }
