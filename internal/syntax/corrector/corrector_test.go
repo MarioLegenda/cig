@@ -174,3 +174,43 @@ func TestDuplicatedColumns(t *testing.T) {
 		assert.True(t, errors.Is(k, InvalidSelectedColumn))
 	}
 }
+
+func TestInvalidLimitClauseKeyword(t *testing.T) {
+	sql := "SELECT * FROM path:../../../testdata/example.csv As g WHERE 'g.Year'::int < '2013' LIIT 10"
+
+	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	assert.Equal(t, 1, len(errs))
+}
+
+func TestInvalidLimitClauseValue(t *testing.T) {
+	sql := "SELECT * FROM path:../../../testdata/example.csv As g WHERE 'g.Year'::int < '2013' LIMIT sdfkjdsa"
+
+	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	assert.Equal(t, 1, len(errs))
+}
+
+func TestInvalidOffsetClauseKeyword(t *testing.T) {
+	sql := "SELECT * FROM path:../../../testdata/example.csv As g WHERE 'g.Year'::int < '2013' OFFST 10"
+
+	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	assert.Equal(t, 1, len(errs))
+}
+
+func TestInvalidOffsetClauseValue(t *testing.T) {
+	sql := "SELECT * FROM path:../../../testdata/example.csv As g WHERE 'g.Year'::int < '2013' OFFSET 1dfs0"
+
+	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	assert.Equal(t, 1, len(errs))
+}
+
+func TestValidLimitClause(t *testing.T) {
+	sql := "SELECT * FROM path:../../../testdata/example.csv As g WHERE 'g.Year'::int < '2013' LIMIT 10 OFFSET 45"
+
+	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	assert.Equal(t, 0, len(errs))
+}

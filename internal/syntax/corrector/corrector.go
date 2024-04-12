@@ -8,6 +8,7 @@ import (
 	"github.com/MarioLegenda/cig/internal/syntax/splitter"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -23,10 +24,12 @@ var InvalidDataType = errors.New("Invalid data type.")
 var InvalidAlias = errors.New("Invalid alias.")
 var InvalidConditionAlias = errors.New("Invalid condition alias.")
 var InvalidSelectedColumn = errors.New("Invalid selected column.")
+var InvalidConstraint = errors.New("Invalid constraint.")
 
 func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 	errs := make([]error, 0)
 	chunks := normalizeChunks(s.Chunks())
+	constraints := []string{"limit", "offset", "order by"}
 
 	// there should be minimally 6 chunks, invalid right away
 	if len(chunks) < 6 {
@@ -84,6 +87,7 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 	// from index 6, there should be a where clause
 	// TODO: must be changed when JOIN comes into play
 	whereClause := chunks[6:]
+	totalParts := 6
 
 	if len(whereClause) != 0 {
 		// minimal number of chunks for WHERE clause is 4
@@ -92,6 +96,7 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 			return errs
 		}
 
+		totalParts++
 		// validate actual WHERE clause
 		where := whereClause[0]
 		if strings.ToLower(where) != "where" {
@@ -101,22 +106,23 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 		// after WHERE only conditions can be
 		conditionParts := whereClause[1:]
 
-		/**
-			The algorithm iterates over each chunks of the condition. Condition is everything between
-		    AND and OR operators. If the algorithm expects a condition, isDiscoveryMode will be true.
-			If it expects an operator, it is false. Based on this flag, the algorithm will either validate
-			the logical operator or the condition.
-
-			Since conditionParts is an array simply split by an empty space, condition will be a combination
-			of 3 array indexes. If the algorithm expects a condition, it will count those positions. That is the
-			job of the position variable. This variable is incremented every time the algorithm expects a part of
-			the condition and that part is saved into condition [3]string. Number of condition parts is to. After
-			sufficient number of parts is found, the entire condition is validated.
-		*/
 		isDiscoveryMode := true
 		var condition [3]string
 		position := 0
 		for _, k := range conditionParts {
+			totalParts++
+
+			conditionsEnd := false
+			for _, part := range constraints {
+				if strings.ToLower(k) == part {
+					conditionsEnd = true
+				}
+			}
+
+			if conditionsEnd {
+				break
+			}
+
 			// logical operator expected and validated
 			if !isDiscoveryMode {
 				if err := checkLogicalOperator(k); err != nil {
@@ -127,12 +133,10 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 				continue
 			}
 
-			// save the condition parts until there are 3 of them (position variable)
 			if isDiscoveryMode {
 				condition[position] = k
 			}
 
-			// all condition parts have been collected. validate the entire condition.
 			if position == 2 {
 				isDiscoveryMode = false
 				position = 0
@@ -164,10 +168,74 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 				continue
 			}
 
-			// this variable is only incremented if isDiscoveryMode = true which means
-			// that the algorithm is collecting condition parts. It is reset to 0 (zero)
-			// when the algorithm finds a logical operator
 			position++
+		}
+	}
+
+	if len(chunks) > totalParts {
+		foundConstraints := chunks[totalParts-1:]
+
+		constraintErrs := checkConstraints(foundConstraints, constraints)
+		if len(constraintErrs) != 0 {
+			errs = append(errs, constraintErrs...)
+		}
+	}
+
+	return errs
+}
+
+func checkConstraints(foundConstraints []string, validConstraints []string) []error {
+	errs := make([]error, 0)
+	groupedConstraints := make([][2]string, 0)
+	var group [2]string
+
+	breakpoint := 0
+	position := 0
+	for _, f := range foundConstraints {
+		if breakpoint == 2 {
+			groupedConstraints = append(groupedConstraints, group)
+			group[0] = ""
+			group[1] = ""
+			breakpoint = 0
+			position = 0
+		}
+
+		group[position] = f
+
+		breakpoint++
+		position++
+	}
+
+	if breakpoint == 2 {
+		groupedConstraints = append(groupedConstraints, group)
+	}
+
+	if len(groupedConstraints) == 0 || len(groupedConstraints) > 3 {
+		errs = append(errs, fmt.Errorf("Invalid constraint. Number of clauses invalid: %w", InvalidConstraint))
+		return errs
+	}
+
+	for _, group := range groupedConstraints {
+		constraint := strings.ToLower(group[0])
+		value := group[1]
+
+		found := false
+		for _, v := range validConstraints {
+			if v == constraint {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			errs = append(errs, fmt.Errorf("Invalid constraint. Valid constraints are %s. Something else found: %w", strings.Join(validConstraints, ","), InvalidConstraint))
+		}
+
+		if constraint == "limit" || constraint == "offset" {
+			_, err := strconv.ParseInt(value, 10, 64)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("Invalid constraint. Unable to parse value of %s. Value must be a valid integer: %w", constraint, InvalidConstraint))
+			}
 		}
 	}
 
