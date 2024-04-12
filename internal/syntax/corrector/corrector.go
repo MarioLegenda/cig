@@ -7,6 +7,7 @@ import (
 	"github.com/MarioLegenda/cig/internal/syntax/operators"
 	"github.com/MarioLegenda/cig/internal/syntax/splitter"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -21,6 +22,7 @@ var InvalidValueChuck = errors.New("Invalid value chunk.")
 var InvalidDataType = errors.New("Invalid data type.")
 var InvalidAlias = errors.New("Invalid alias.")
 var InvalidConditionAlias = errors.New("Invalid condition alias.")
+var InvalidSelectedColumn = errors.New("Invalid selected column.")
 
 func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 	errs := make([]error, 0)
@@ -66,7 +68,7 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 		errs = append(errs, InvalidAsChunk)
 	}
 
-	if aliasErrs := checkAlias(chunks[5], chunks[1]); aliasErrs != nil {
+	if aliasErrs := checkAliasAndSelectedColumnDuplicates(chunks[5], chunks[1]); aliasErrs != nil {
 		errs = append(errs, aliasErrs...)
 	}
 
@@ -180,19 +182,28 @@ func checkIsQuoteEnclosed(v, t string) error {
 	return nil
 }
 
-func checkAlias(alias, columns string) []error {
+func checkAliasAndSelectedColumnDuplicates(alias, columns string) []error {
 	if columns == "*" {
 		return nil
 	}
 
 	split := strings.Split(columns, ",")
+	sort.Strings(split)
 	errs := make([]error, 0)
+
+	prevClm := ""
 	for _, s := range split {
 		a := string(s[1])
 
 		if alias != a {
 			errs = append(errs, fmt.Errorf("Alias for column %s does not match the csv file alias %s: %w", a, alias, InvalidAlias))
 		}
+
+		if prevClm != "" && prevClm == s {
+			errs = append(errs, fmt.Errorf("Duplicate column %s and %s found: %w", prevClm, s, InvalidSelectedColumn))
+		}
+
+		prevClm = s
 	}
 
 	if len(errs) != 0 {

@@ -162,3 +162,15 @@ func TestValidAliasInConditions(t *testing.T) {
 		assert.True(t, errors.Is(k, InvalidConditionAlias))
 	}
 }
+
+func TestDuplicatedColumns(t *testing.T) {
+	sql := "SELECT      'g.Year',         'g.Industry_aggregation_NZSIOC',         'g.Year'      FROM path:../../../testdata/example.csv As g WHERE 'g.a'::int = 'b' AND 'g.b'::float != 'a' OR 'g.c'::int != 'o' AND 'g.C'::float <= 'O'"
+
+	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	assert.Equal(t, 1, len(errs))
+
+	for _, k := range errs {
+		assert.True(t, errors.Is(k, InvalidSelectedColumn))
+	}
+}
