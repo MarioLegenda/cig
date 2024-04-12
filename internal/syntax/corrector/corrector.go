@@ -19,10 +19,11 @@ var InvalidFilePath = errors.New("Invalid file path.")
 var InvalidWhereClause = errors.New("Invalid WHERE clause.")
 var InvalidValueChuck = errors.New("Invalid value chunk.")
 var InvalidDataType = errors.New("Invalid data type.")
+var InvalidAlias = errors.New("Invalid alias.")
 
 func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
-	chunks := s.Chunks()
 	errs := make([]error, 0)
+	chunks := normalizeChunks(s.Chunks())
 
 	if len(chunks) < 6 {
 		errs = append(errs, InvalidNumberOfChunks)
@@ -62,6 +63,10 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 
 	if strings.ToLower(chunks[4]) != "as" {
 		errs = append(errs, InvalidAsChunk)
+	}
+
+	if aliasErrs := checkAlias(chunks[5], chunks[1]); aliasErrs != nil {
+		errs = append(errs, aliasErrs...)
 	}
 
 	whereClause := chunks[6:]
@@ -169,6 +174,28 @@ func checkIsQuoteEnclosed(v, t string) error {
 	return nil
 }
 
+func checkAlias(alias, columns string) []error {
+	if columns == "*" {
+		return nil
+	}
+
+	split := strings.Split(columns, ",")
+	errs := make([]error, 0)
+	for _, s := range split {
+		a := string(s[1])
+
+		if alias != a {
+			errs = append(errs, fmt.Errorf("Alias for column %s does not match the csv file alias %s: %w", a, alias, InvalidAlias))
+		}
+	}
+
+	if len(errs) != 0 {
+		return errs
+	}
+
+	return nil
+}
+
 func checkDataTypeValidIfExists(v string) error {
 	split := strings.Split(v, "::")
 
@@ -184,4 +211,30 @@ func checkDataTypeValidIfExists(v string) error {
 	}
 
 	return fmt.Errorf("Invalid data type. Type %s does not exist. Valid conversion data types are %s: %w", dt, strings.Join(dataTypes.DataTypes, ","), InvalidDataType)
+}
+
+func normalizeChunks(chunks []string) []string {
+	c := make([]string, 0)
+	// append select statement
+	c = append(c, chunks[0])
+
+	withoutSelect := chunks[1:]
+	appendOnlyMode := false
+	columns := ""
+	for _, k := range withoutSelect {
+		if strings.ToLower(k) == "from" {
+			c = append(c, columns)
+			appendOnlyMode = true
+		}
+
+		if appendOnlyMode {
+			c = append(c, k)
+		}
+
+		if !appendOnlyMode {
+			columns += k
+		}
+	}
+
+	return c
 }

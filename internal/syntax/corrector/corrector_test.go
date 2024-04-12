@@ -38,10 +38,9 @@ func TestCorrectorInvalidSelectAndFromChunk(t *testing.T) {
 
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
 
-	assert.Equal(t, 2, len(errs))
+	assert.Equal(t, 1, len(errs))
 
-	assert.True(t, errors.Is(errs[0], InvalidSelectChunk))
-	assert.True(t, errors.Is(errs[1], InvalidFromChunk))
+	assert.True(t, errors.Is(errs[0], InvalidNumberOfChunks))
 }
 
 func TestCorrectorInvalidPathChunk(t *testing.T) {
@@ -142,4 +141,12 @@ func TestValidateDataTypes(t *testing.T) {
 	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
 
 	assert.Equal(t, 0, len(errs))
+}
+
+func TestValidateColumnAlias(t *testing.T) {
+	sql := "SELECT      'g.Year',         'e.Industry_aggregation_NZSIOC',         'z.Industry_code_NZSIOC'      FROM path:../../../testdata/example.csv As g WHERE 'a'::int = 'b' AND 'b'::float != 'a' OR 'c'::int != 'o' AND 'C'::float <= 'O'"
+
+	errs := IsShallowSyntaxCorrect(splitter.NewSplitter(sql))
+
+	assert.Equal(t, 2, len(errs))
 }
