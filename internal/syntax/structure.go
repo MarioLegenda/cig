@@ -41,6 +41,7 @@ func NewStructure(sql string) result.Result[Structure] {
 	}
 
 	columns := splitColumns(s.Chunks()[1])
+
 	f, alias := resolveFiles(s.Chunks()[3], s.Chunks()[5])
 
 	syntaxStructure := structure{
@@ -57,7 +58,12 @@ func splitColumns(c string) []string {
 		return []string{"*"}
 	}
 
-	return strings.Split(c, ",")
+	split := strings.Split(c, ",")
+	for i, s := range split {
+		split[i] = s[1 : len(s)-1]
+	}
+
+	return split
 }
 
 func resolveFiles(path, alias string) (string, string) {

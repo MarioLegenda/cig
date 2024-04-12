@@ -6,7 +6,7 @@ type column struct {
 
 type Column interface {
 	HasColumn(column string) int
-	ShouldReturnAll() bool
+	Columns() []string
 }
 
 func (c column) HasColumn(search string) int {
@@ -19,8 +19,8 @@ func (c column) HasColumn(search string) int {
 	return -1
 }
 
-func (c column) ShouldReturnAll() bool {
-	return len(c.columns) == 1 && c.columns[0] == "*"
+func (c column) Columns() []string {
+	return c.columns
 }
 
 func NewColumn(columns []string) Column {
