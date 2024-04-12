@@ -20,6 +20,7 @@ var InvalidWhereClause = errors.New("Invalid WHERE clause.")
 var InvalidValueChuck = errors.New("Invalid value chunk.")
 var InvalidDataType = errors.New("Invalid data type.")
 var InvalidAlias = errors.New("Invalid alias.")
+var InvalidConditionAlias = errors.New("Invalid condition alias.")
 
 func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 	errs := make([]error, 0)
@@ -69,6 +70,7 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 		errs = append(errs, aliasErrs...)
 	}
 
+	alias := chunks[5]
 	whereClause := chunks[6:]
 
 	if len(whereClause) != 0 {
@@ -106,6 +108,10 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 				position = 0
 
 				if err := checkIsQuoteEnclosed(condition[0], "column"); err != nil {
+					errs = append(errs, err)
+				}
+
+				if err := checkValidConditionAlias(alias, condition[0]); err != nil {
 					errs = append(errs, err)
 				}
 
@@ -211,6 +217,14 @@ func checkDataTypeValidIfExists(v string) error {
 	}
 
 	return fmt.Errorf("Invalid data type. Type %s does not exist. Valid conversion data types are %s: %w", dt, strings.Join(dataTypes.DataTypes, ","), InvalidDataType)
+}
+
+func checkValidConditionAlias(alias, column string) error {
+	if alias != string(column[1]) {
+		return fmt.Errorf("Condition alias does not correspond to csv file alias: alias: %s, column: %s: %w", alias, column, InvalidConditionAlias)
+	}
+
+	return nil
 }
 
 func normalizeChunks(chunks []string) []string {
