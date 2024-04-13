@@ -26,7 +26,7 @@ func main() {
 func tryCig() {
 	c := cig.New()
 
-	result := c.Run("SELECT 'e.Year','e.Industry_aggregation_NZSIOC' FROM path:../testdata/example.csv AS e WHERE 'e.Year'::int > '2013' LIMIT 10")
+	result := c.Run("SELECT 'e.Year', 'e.Industry_aggregation_NZSIOC' FROM path:../testdata/example.csv AS e WHERE 'e.Year'::int > '2013' LIMIT 10")
 
 	fmt.Println(result.Errors())
 }

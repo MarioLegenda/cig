@@ -48,18 +48,54 @@ func NewStructure(sql string) result.Result[Structure] {
 		return result.NewResult[Structure](nil, errs)
 	}
 
-	columns := splitColumns(s.Chunks()[1])
+	chunks := s.Chunks()
+	chunks = combineNonSeparatableParts(chunks)
 
-	f, alias := resolveFiles(s.Chunks()[3], s.Chunks()[5])
+	for _, c := range chunks {
+		fmt.Println(c)
+	}
+
+	columns := splitColumns(chunks[1])
+
+	f, alias := resolveFiles(chunks[3], chunks[5])
 
 	t := structure{
 		column:      syntaxStructure.NewColumn(columns),
 		fileDb:      syntaxStructure.NewFileDB(f, alias),
-		condition:   resolveWhereClause(s.Chunks()[6:]),
-		constraints: resolveConstraints(s.Chunks()[6:]),
+		condition:   resolveWhereClause(chunks[6:]),
+		constraints: resolveConstraints(chunks[6:]),
 	}
 
 	return result.NewResult[Structure](t, nil)
+}
+
+func combineNonSeparatableParts(chunks []string) []string {
+	combinedChunks := make([]string, 0)
+
+	combineMode := false
+	base := ""
+	for _, c := range chunks {
+		if strings.ToLower(c) == "select" {
+			combineMode = true
+			combinedChunks = append(combinedChunks, c)
+			continue
+		}
+
+		if strings.ToLower(c) == "from" {
+			combinedChunks = append(combinedChunks, base)
+			combineMode = false
+		}
+
+		if combineMode {
+			base += c
+		}
+
+		if !combineMode {
+			combinedChunks = append(combinedChunks, c)
+		}
+	}
+
+	return combinedChunks
 }
 
 func splitColumns(c string) []string {

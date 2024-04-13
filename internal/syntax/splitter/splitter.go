@@ -41,6 +41,7 @@ func removeWhitespace(s string) string {
 			continue
 		}
 
+		// 39 is quote
 		if b != 39 && quoteMode {
 			base += string(b)
 			continue
@@ -52,6 +53,7 @@ func removeWhitespace(s string) string {
 			continue
 		}
 
+		// 32 is whitespace
 		if b == 32 && !whitespaceMode {
 			whitespaceMode = true
 			base += Separator
