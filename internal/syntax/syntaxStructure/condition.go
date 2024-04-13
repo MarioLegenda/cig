@@ -1,4 +1,4 @@
-package syntaxParts
+package syntaxStructure
 
 import "strings"
 

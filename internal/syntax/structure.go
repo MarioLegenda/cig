@@ -1,36 +1,44 @@
 package syntax
 
 import (
+	"fmt"
 	"github.com/MarioLegenda/cig/internal/syntax/corrector"
 	"github.com/MarioLegenda/cig/internal/syntax/operators"
 	"github.com/MarioLegenda/cig/internal/syntax/splitter"
-	"github.com/MarioLegenda/cig/internal/syntax/syntaxParts"
+	"github.com/MarioLegenda/cig/internal/syntax/syntaxStructure"
 	"github.com/MarioLegenda/cig/pkg/result"
+	"strconv"
 	"strings"
 )
 
 type structure struct {
-	column    syntaxParts.Column
-	fileDb    syntaxParts.FileDB
-	condition syntaxParts.Condition
+	column      syntaxStructure.Column
+	fileDb      syntaxStructure.FileDB
+	condition   syntaxStructure.Condition
+	constraints syntaxStructure.StructureConstraints
 }
 
 type Structure interface {
-	Column() syntaxParts.Column
-	FileDB() syntaxParts.FileDB
-	Condition() syntaxParts.Condition
+	Column() syntaxStructure.Column
+	FileDB() syntaxStructure.FileDB
+	Condition() syntaxStructure.Condition
+	Constraints() syntaxStructure.StructureConstraints
 }
 
-func (s structure) Column() syntaxParts.Column {
+func (s structure) Column() syntaxStructure.Column {
 	return s.column
 }
 
-func (s structure) FileDB() syntaxParts.FileDB {
+func (s structure) FileDB() syntaxStructure.FileDB {
 	return s.fileDb
 }
 
-func (s structure) Condition() syntaxParts.Condition {
+func (s structure) Condition() syntaxStructure.Condition {
 	return s.condition
+}
+
+func (s structure) Constraints() syntaxStructure.StructureConstraints {
+	return s.constraints
 }
 
 func NewStructure(sql string) result.Result[Structure] {
@@ -44,13 +52,14 @@ func NewStructure(sql string) result.Result[Structure] {
 
 	f, alias := resolveFiles(s.Chunks()[3], s.Chunks()[5])
 
-	syntaxStructure := structure{
-		column:    syntaxParts.NewColumn(columns),
-		fileDb:    syntaxParts.NewFileDB(f, alias),
-		condition: resolveWhereClause(s.Chunks()[6:]),
+	t := structure{
+		column:      syntaxStructure.NewColumn(columns),
+		fileDb:      syntaxStructure.NewFileDB(f, alias),
+		condition:   resolveWhereClause(s.Chunks()[6:]),
+		constraints: resolveConstraints(s.Chunks()[6:]),
 	}
 
-	return result.NewResult[Structure](syntaxStructure, nil)
+	return result.NewResult[Structure](t, nil)
 }
 
 func splitColumns(c string) []string {
@@ -72,29 +81,33 @@ func resolveFiles(path, alias string) (string, string) {
 	return p[1], alias
 }
 
-func resolveWhereClause(chunks []string) syntaxParts.Condition {
+func resolveWhereClause(chunks []string) syntaxStructure.Condition {
 	if len(chunks) == 0 {
 		return nil
 	}
 
 	conditionsOnly := chunks[1:]
 
-	var head syntaxParts.Condition
-	var next syntaxParts.Condition
+	var head syntaxStructure.Condition
+	var next syntaxStructure.Condition
 	isDiscoveryMode := true
 	position := 0
 	var parts [3]string
 	for _, c := range conditionsOnly {
+		possibleConstraint := strings.ToLower(c)
+		if possibleConstraint == operators.LimitConstraint || possibleConstraint == operators.OffsetConstraint || possibleConstraint == operators.OrderByConstraint {
+			return head
+		}
+
 		if !isDiscoveryMode {
-			// TODO: check that next != nil to prevent runtime panic
 			logicalOperator := operators.AndOperator
 			if strings.ToLower(c) == operators.OrOperator {
 				logicalOperator = operators.OrOperator
 			}
 
-			t := syntaxParts.NewCondition(
+			t := syntaxStructure.NewCondition(
 				nil,
-				syntaxParts.NewConditionOperator(logicalOperator, c),
+				syntaxStructure.NewConditionOperator(logicalOperator, c),
 				nil,
 			)
 
@@ -122,19 +135,19 @@ func resolveWhereClause(chunks []string) syntaxParts.Condition {
 				columnOnly, dataType := getColumnDataOnlyIfDataTypeExists(parts[0])
 				aliasSplit := strings.Split(columnOnly[1:len(columnOnly)-1], ".")
 
-				head = syntaxParts.NewCondition(
-					syntaxParts.NewConditionColumn(aliasSplit[0], aliasSplit[1], dataType, parts[0]),
-					syntaxParts.NewConditionOperator(parts[1], parts[1]),
-					syntaxParts.NewConditionValue(parts[2][1:len(parts[2])-1], parts[2]),
+				head = syntaxStructure.NewCondition(
+					syntaxStructure.NewConditionColumn(aliasSplit[0], aliasSplit[1], dataType, parts[0]),
+					syntaxStructure.NewConditionOperator(parts[1], parts[1]),
+					syntaxStructure.NewConditionValue(parts[2][1:len(parts[2])-1], parts[2]),
 				)
 			} else if head != nil && next != nil {
 				columnOnly, dataType := getColumnDataOnlyIfDataTypeExists(parts[0])
 				aliasSplit := strings.Split(columnOnly[1:len(columnOnly)-1], ".")
 
-				t := syntaxParts.NewCondition(
-					syntaxParts.NewConditionColumn(aliasSplit[0], aliasSplit[1], dataType, parts[0]),
-					syntaxParts.NewConditionOperator(parts[1], parts[1]),
-					syntaxParts.NewConditionValue(parts[2][1:len(parts[2])-1], parts[2]),
+				t := syntaxStructure.NewCondition(
+					syntaxStructure.NewConditionColumn(aliasSplit[0], aliasSplit[1], dataType, parts[0]),
+					syntaxStructure.NewConditionOperator(parts[1], parts[1]),
+					syntaxStructure.NewConditionValue(parts[2][1:len(parts[2])-1], parts[2]),
 				)
 
 				next.SetNext(t)
@@ -152,6 +165,39 @@ func resolveWhereClause(chunks []string) syntaxParts.Condition {
 	}
 
 	return head
+}
+
+func resolveConstraints(chunks []string) syntaxStructure.StructureConstraints {
+	var limit syntaxStructure.Constraint[int64]
+	var offset syntaxStructure.Constraint[int64]
+	limitMode := false
+	offsetMode := false
+	for _, c := range chunks {
+		if strings.ToLower(c) == "limit" {
+			limitMode = true
+			continue
+		}
+
+		if strings.ToLower(c) == "offset" {
+			offsetMode = true
+			continue
+		}
+
+		if limitMode {
+			fmt.Println(c)
+			l, _ := strconv.ParseInt(c, 10, 64)
+			limit = syntaxStructure.NewLimit(l)
+			limitMode = false
+		}
+
+		if offsetMode {
+			l, _ := strconv.ParseInt(c, 10, 64)
+			offset = syntaxStructure.NewOffset(l)
+			offsetMode = false
+		}
+	}
+
+	return syntaxStructure.NewConstraints(limit, offset)
 }
 
 func getColumnDataOnlyIfDataTypeExists(column string) (string, string) {

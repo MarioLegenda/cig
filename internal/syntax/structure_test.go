@@ -94,3 +94,91 @@ func TestStructureWithMultipleConditions(t *testing.T) {
 	assert.Equal(t, fourthCondition.Value().Value(), "some value")
 	assert.Equal(t, fourthCondition.Operator().Original(), "<=")
 }
+
+func TestLimitConstraintValid(t *testing.T) {
+	sql := "SELECT * FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::string = 'Level 1' LIMIT 10"
+
+	res := NewStructure(sql)
+
+	assert.Equal(t, false, res.HasErrors())
+	assert.Nil(t, res.Errors())
+
+	assert.NotNil(t, res.Result().Constraints())
+	assert.NotNil(t, res.Result().Constraints().Limit())
+	assert.Equal(t, res.Result().Constraints().Limit().Value(), int64(10))
+	assert.Nil(t, res.Result().Constraints().Offset())
+
+	condition := res.Result().Condition()
+
+	assert.Equal(t, condition.Column().Original(), "'e.Industry_aggregation_NZSIOC'::string")
+	assert.Equal(t, condition.Column().Alias(), "e")
+	assert.Equal(t, condition.Column().Column(), "Industry_aggregation_NZSIOC")
+	assert.Equal(t, condition.Column().DataType(), dataTypes.String)
+
+	assert.Equal(t, condition.Value().Original(), "'Level 1'")
+	assert.Equal(t, condition.Value().Value(), "Level 1")
+
+	assert.Equal(t, condition.Operator().Original(), "=")
+
+	assert.Nil(t, condition.Next())
+	assert.Nil(t, condition.Prev())
+}
+
+func TestOffsetConstraintValid(t *testing.T) {
+	sql := "SELECT * FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::string = 'Level 1' Offset 10"
+
+	res := NewStructure(sql)
+
+	assert.Equal(t, false, res.HasErrors())
+	assert.Nil(t, res.Errors())
+
+	assert.NotNil(t, res.Result().Constraints())
+	assert.Nil(t, res.Result().Constraints().Limit())
+	assert.NotNil(t, res.Result().Constraints().Offset())
+	assert.Equal(t, res.Result().Constraints().Offset().Value(), int64(10))
+
+	condition := res.Result().Condition()
+
+	assert.Equal(t, condition.Column().Original(), "'e.Industry_aggregation_NZSIOC'::string")
+	assert.Equal(t, condition.Column().Alias(), "e")
+	assert.Equal(t, condition.Column().Column(), "Industry_aggregation_NZSIOC")
+	assert.Equal(t, condition.Column().DataType(), dataTypes.String)
+
+	assert.Equal(t, condition.Value().Original(), "'Level 1'")
+	assert.Equal(t, condition.Value().Value(), "Level 1")
+
+	assert.Equal(t, condition.Operator().Original(), "=")
+
+	assert.Nil(t, condition.Next())
+	assert.Nil(t, condition.Prev())
+}
+
+func TestAllConstraintValid(t *testing.T) {
+	sql := "SELECT * FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::string = 'Level 1' Offset 10 LIMIT 45"
+
+	res := NewStructure(sql)
+
+	assert.Equal(t, false, res.HasErrors())
+	assert.Nil(t, res.Errors())
+
+	assert.NotNil(t, res.Result().Constraints())
+	assert.NotNil(t, res.Result().Constraints().Limit())
+	assert.NotNil(t, res.Result().Constraints().Offset())
+	assert.Equal(t, res.Result().Constraints().Offset().Value(), int64(10))
+	assert.Equal(t, res.Result().Constraints().Limit().Value(), int64(45))
+
+	condition := res.Result().Condition()
+
+	assert.Equal(t, condition.Column().Original(), "'e.Industry_aggregation_NZSIOC'::string")
+	assert.Equal(t, condition.Column().Alias(), "e")
+	assert.Equal(t, condition.Column().Column(), "Industry_aggregation_NZSIOC")
+	assert.Equal(t, condition.Column().DataType(), dataTypes.String)
+
+	assert.Equal(t, condition.Value().Original(), "'Level 1'")
+	assert.Equal(t, condition.Value().Value(), "Level 1")
+
+	assert.Equal(t, condition.Operator().Original(), "=")
+
+	assert.Nil(t, condition.Next())
+	assert.Nil(t, condition.Prev())
+}

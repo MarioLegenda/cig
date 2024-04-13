@@ -3,12 +3,12 @@ package db
 import (
 	"fmt"
 	"github.com/MarioLegenda/cig/internal/db/fs"
-	"github.com/MarioLegenda/cig/internal/syntax/syntaxParts"
+	"github.com/MarioLegenda/cig/internal/syntax/syntaxStructure"
 	"io"
 	"os"
 )
 
-func prepareRun(file syntaxParts.FileDB, d *db) (io.ReadCloser, error) {
+func prepareRun(file syntaxStructure.FileDB, d *db) (io.ReadCloser, error) {
 	f, err := os.Open(file.Path())
 	if err != nil {
 		return nil, fmt.Errorf("Opening file %s failed with error: %w", file.Path(), err)
