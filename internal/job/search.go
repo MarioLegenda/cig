@@ -6,12 +6,12 @@ import (
 	"github.com/MarioLegenda/cig/internal/db/conditionResolver"
 	"github.com/MarioLegenda/cig/internal/db/fs"
 	"github.com/MarioLegenda/cig/internal/db/selectedColumnMetadata"
-	"github.com/MarioLegenda/cig/internal/syntax/syntaxParts"
+	"github.com/MarioLegenda/cig/internal/syntax/syntaxStructure"
 	"github.com/MarioLegenda/cig/pkg/result"
 	"io"
 )
 
-func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata conditionResolver.ColumnMetadata, condition syntaxParts.Condition, f io.ReadCloser) JobFn {
+func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata conditionResolver.ColumnMetadata, condition syntaxStructure.Condition, f io.ReadCloser) JobFn {
 	return func(id int, writer chan result.Result[SearchResult], ctx context.Context) {
 		results := make(SearchResult, 0)
 		lineReader := fs.NewLineReader(f, true)

@@ -26,11 +26,9 @@ func main() {
 func tryCig() {
 	c := cig.New()
 
-	result := c.Run("SELECT 'e.Year',         'e.Industry_aggregation_NZSIOC',         'e.Year' FROM path:../testdata/example.csv AS e WHERE 'e.Year'::int > '2013'")
+	result := c.Run("SELECT 'e.Year','e.Industry_aggregation_NZSIOC' FROM path:../testdata/example.csv AS e WHERE 'e.Year'::int > '2013' LIMIT 10")
 
 	fmt.Println(result.Errors())
-
-	fmt.Println(result.Result())
 }
 
 func NewLineReader(f io.Reader, skipColumns bool) func() ([]string, error) {

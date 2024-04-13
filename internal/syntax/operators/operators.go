@@ -18,3 +18,13 @@ var Operators = []string{
 	GreaterThanOperator,
 	GreaterThanOrEqualOperator,
 }
+
+const LimitConstraint = "limit"
+const OffsetConstraint = "offset"
+const OrderByConstraint = "order by"
+
+var Constraints = []string{
+	LimitConstraint,
+	OffsetConstraint,
+	OrderByConstraint,
+}

@@ -1,4 +1,4 @@
-package syntaxParts
+package syntaxStructure
 
 type fileDb struct {
 	path  string

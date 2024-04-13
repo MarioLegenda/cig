@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/MarioLegenda/cig/internal/db/comparison"
 	"github.com/MarioLegenda/cig/internal/syntax/operators"
-	"github.com/MarioLegenda/cig/internal/syntax/syntaxParts"
+	"github.com/MarioLegenda/cig/internal/syntax/syntaxStructure"
 )
 
 type cond struct {
@@ -16,7 +16,7 @@ type cond struct {
 }
 
 // good enough for now, technically incorrect
-func ResolveCondition(condition syntaxParts.Condition, metadata ColumnMetadata, lines []string) (bool, error) {
+func ResolveCondition(condition syntaxStructure.Condition, metadata ColumnMetadata, lines []string) (bool, error) {
 	ands := make([]cond, 0)
 	ors := make([]cond, 0)
 

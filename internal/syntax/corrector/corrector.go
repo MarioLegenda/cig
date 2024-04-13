@@ -29,7 +29,6 @@ var InvalidConstraint = errors.New("Invalid constraint.")
 func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 	errs := make([]error, 0)
 	chunks := normalizeChunks(s.Chunks())
-	constraints := []string{"limit", "offset", "order by"}
 
 	// there should be minimally 6 chunks, invalid right away
 	if len(chunks) < 6 {
@@ -113,7 +112,7 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 			totalParts++
 
 			conditionsEnd := false
-			for _, part := range constraints {
+			for _, part := range operators.Constraints {
 				if strings.ToLower(k) == part {
 					conditionsEnd = true
 				}
@@ -175,7 +174,7 @@ func IsShallowSyntaxCorrect(s splitter.Splitter) []error {
 	if len(chunks) > totalParts {
 		foundConstraints := chunks[totalParts-1:]
 
-		constraintErrs := checkConstraints(foundConstraints, constraints)
+		constraintErrs := checkConstraints(foundConstraints, operators.Constraints)
 		if len(constraintErrs) != 0 {
 			errs = append(errs, constraintErrs...)
 		}
