@@ -1,12 +1,6 @@
 package main
 
-import (
-	"encoding/csv"
-	"errors"
-	"fmt"
-	"github.com/MarioLegenda/cig"
-	"io"
-)
+import "fmt"
 
 func main() {
 	tryCig()
@@ -24,31 +18,97 @@ func main() {
 }
 
 func tryCig() {
-	c := cig.New()
+	sql := `              			
 
-	result := c.Run("SELECT 'e.Year', 'e.Industry_aggregation_NZSIOC' FROM path:../testdata/example.csv AS e WHERE 'e.Year'::int > '2013' LIMIT 10")
 
-	fmt.Println(result.Errors())
+SELECT 
+    
+    
+    
+    'e.Year'
+     ,    'e.Industry_aggregation_NZSIOC' 
+		FROM 
+		    path:../testdata/example.csv   			AS			     e 
+		WHERE 				'e.Year'::int 
+		    
+		    
+		    > 			
+		    
+		    
+		                       '2013'			 
+		ORDER 
+		    
+		    
+		    
+		    BY 
+		    
+		    
+		    
+	'e.Year'        ,
+		    
+		    
+		    'e.Industry_ag      gregation_NZSIOC'                        
+		LIMIT                 		10 
+		    OFFSET 
+		    
+		    
+		    
+		    
+		    4
+		
+		
+		
+		
+		`
+
+	tokens := validateAndParse(sql)
+
+	for _, t := range tokens {
+		fmt.Println(t)
+	}
 }
 
-func NewLineReader(f io.Reader, skipColumns bool) func() ([]string, error) {
-	r := csv.NewReader(f)
+func validateAndParse(sql string) []string {
+	i := 0
 
-	return func() ([]string, error) {
-		b, err := r.Read()
-		if err != nil && !errors.Is(err, io.EOF) {
-			return nil, err
+	tokens := make([]string, 0)
+	buf := make([]byte, 0)
+	for i < len(sql) {
+		b := sql[i]
+
+		if b == 10 || b == 9 || b == 32 {
+			i++
+			continue
 		}
 
-		if skipColumns {
-			b, err := r.Read()
-			if err != nil && !errors.Is(err, io.EOF) {
-				return nil, err
+		quoteMode := false
+		for i < len(sql) {
+			b = sql[i]
+			if b == 39 && !quoteMode {
+				quoteMode = true
+			} else if b == 39 && quoteMode {
+				quoteMode = false
 			}
 
-			return b, nil
+			if quoteMode {
+				buf = append(buf, b)
+				i++
+				continue
+			} else if b != 10 && b != 9 && b != 32 {
+				buf = append(buf, b)
+				i++
+				continue
+			}
+
+			if len(buf) != 0 {
+				tokens = append(tokens, string(buf))
+				buf = make([]byte, 0)
+				break
+			}
 		}
 
-		return b, nil
+		return append(tokens, validateAndParse(sql[i:])...)
 	}
+
+	return tokens
 }
