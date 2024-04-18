@@ -1,6 +1,7 @@
 package splitter
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -54,13 +55,13 @@ func removeWhitespace(s string) string {
 		}
 
 		// 32 is whitespace
-		if b == 32 && !whitespaceMode {
+		if (b == 32 || b == 10 || b == 9) && !whitespaceMode {
 			whitespaceMode = true
 			base += Separator
 			continue
 		}
 
-		if b != 32 && whitespaceMode {
+		if (b != 32 || b != 10 || b != 9) && whitespaceMode {
 			whitespaceMode = false
 		}
 
@@ -68,6 +69,8 @@ func removeWhitespace(s string) string {
 			base += string(b)
 		}
 	}
+
+	fmt.Println(base)
 
 	return base
 }
