@@ -3,6 +3,7 @@ package validation
 import (
 	"errors"
 	"github.com/MarioLegenda/cig/internal/syntax/tokenizer"
+	"github.com/MarioLegenda/cig/pkg"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -14,7 +15,7 @@ func TestInvalidSelectChunk(t *testing.T) {
 
 	assert.NotNil(t, err)
 
-	assert.True(t, errors.Is(err, InvalidSelectToken))
+	assert.True(t, errors.Is(err, pkg.InvalidSelectToken))
 }
 
 func TestInvalidSelectableColumns(t *testing.T) {
@@ -29,7 +30,7 @@ func TestInvalidSelectableColumns(t *testing.T) {
 		_, err := ValidateAndCreateMetadata(tokenizer.Tokenize(s))
 
 		assert.NotNil(t, err)
-		assert.True(t, errors.Is(err, InvalidSelectableColumns))
+		assert.True(t, errors.Is(err, pkg.InvalidSelectableColumns))
 	}
 
 	statements = []string{
@@ -41,14 +42,14 @@ func TestInvalidSelectableColumns(t *testing.T) {
 		_, err := ValidateAndCreateMetadata(tokenizer.Tokenize(s))
 
 		assert.NotNil(t, err)
-		assert.True(t, errors.Is(err, InvalidFromToken))
+		assert.True(t, errors.Is(err, pkg.InvalidFromToken))
 	}
 
 	invalidDuplicateColumn := "SELECT 'g.Year'     , 'g.Industry_aggregation_NZSIOC', 'g.Year'      FROM path:../../../testdata/example.csv As g"
 	_, err := ValidateAndCreateMetadata(tokenizer.Tokenize(invalidDuplicateColumn))
 
 	assert.NotNil(t, err)
-	assert.True(t, errors.Is(err, InvalidDuplicatedColumn))
+	assert.True(t, errors.Is(err, pkg.InvalidDuplicatedColumn))
 }
 
 func TestValidFrom(t *testing.T) {
@@ -58,7 +59,7 @@ func TestValidFrom(t *testing.T) {
 
 	assert.NotNil(t, err)
 
-	assert.True(t, errors.Is(err, InvalidFromToken))
+	assert.True(t, errors.Is(err, pkg.InvalidFromToken))
 }
 
 func TestValidPath(t *testing.T) {
@@ -73,7 +74,7 @@ func TestValidPath(t *testing.T) {
 
 		assert.NotNil(t, err)
 
-		assert.True(t, errors.Is(err, InvalidFilePathToken))
+		assert.True(t, errors.Is(err, pkg.InvalidFilePathToken))
 	}
 }
 
@@ -84,7 +85,7 @@ func TestValidAsClause(t *testing.T) {
 
 	assert.NotNil(t, err)
 
-	assert.True(t, errors.Is(err, InvalidAsToken))
+	assert.True(t, errors.Is(err, pkg.InvalidAsToken))
 }
 
 func TestInvalidSelectableColumnAlias(t *testing.T) {
@@ -97,7 +98,7 @@ func TestInvalidSelectableColumnAlias(t *testing.T) {
 
 		assert.NotNil(t, err)
 
-		assert.True(t, errors.Is(err, InvalidColumnAlias))
+		assert.True(t, errors.Is(err, pkg.InvalidColumnAlias))
 	}
 }
 
@@ -106,26 +107,26 @@ func TestValidWhereClause(t *testing.T) {
 	_, err := ValidateAndCreateMetadata(tokenizer.Tokenize(sql))
 
 	assert.NotNil(t, err)
-	assert.True(t, errors.Is(err, InvalidWhereClause))
+	assert.True(t, errors.Is(err, pkg.InvalidWhereClause))
 }
 
 func TestValidConditions(t *testing.T) {
 	statements := map[string]error{
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE a' = b":                             InvalidSelectableColumns,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'a.b' = b":                          InvalidConditionAlias,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' 56 b":                         InvalidComparisonOperator,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = b":                          InvalidValueToken,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' AND a' = b":             InvalidSelectableColumns,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' AND 'a.b' = b":          InvalidConditionAlias,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' AND 'g.b' 56 b":         InvalidComparisonOperator,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' AND 'g.b' = b":          InvalidValueToken,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' OR a' = b":              InvalidSelectableColumns,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' or 'a.b' = b":           InvalidConditionAlias,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' or 'g.b' 56 b":          InvalidComparisonOperator,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' Or 'g.b' = b":           InvalidValueToken,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b'::unknown = 'b' Or 'g.b' = b":  InvalidDataType,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' Or 'g.b'::unknown = b":  InvalidDataType,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' ANd 'g.b'::unknown = b": InvalidDataType,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE a' = b":                             pkg.InvalidSelectableColumns,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'a.b' = b":                          pkg.InvalidConditionAlias,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' 56 b":                         pkg.InvalidComparisonOperator,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = b":                          pkg.InvalidValueToken,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' AND a' = b":             pkg.InvalidSelectableColumns,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' AND 'a.b' = b":          pkg.InvalidConditionAlias,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' AND 'g.b' 56 b":         pkg.InvalidComparisonOperator,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' AND 'g.b' = b":          pkg.InvalidValueToken,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' OR a' = b":              pkg.InvalidSelectableColumns,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' or 'a.b' = b":           pkg.InvalidConditionAlias,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' or 'g.b' 56 b":          pkg.InvalidComparisonOperator,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' Or 'g.b' = b":           pkg.InvalidValueToken,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b'::unknown = 'b' Or 'g.b' = b":  pkg.InvalidDataType,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' Or 'g.b'::unknown = b":  pkg.InvalidDataType,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' ANd 'g.b'::unknown = b": pkg.InvalidDataType,
 	}
 
 	for sql, stmtErr := range statements {

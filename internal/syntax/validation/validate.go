@@ -1,30 +1,14 @@
 package validation
 
 import (
-	"errors"
 	"fmt"
 	"github.com/MarioLegenda/cig/internal/syntax/dataTypes"
 	"github.com/MarioLegenda/cig/internal/syntax/operators"
+	"github.com/MarioLegenda/cig/pkg"
 	"os"
 	"sort"
 	"strings"
 )
-
-var InvalidSelectToken = errors.New("Expected 'select', got something else.")
-var InvalidSelectableColumns = errors.New("Expected selectable column")
-var InvalidDuplicatedColumn = errors.New("Duplicated selectable column")
-var InvalidFromToken = errors.New("Expected 'FROM', got something else.")
-var InvalidFilePathToken = errors.New("Expected 'path:path_to_file' but did not get the path part")
-var InvalidAsToken = errors.New("Expected 'as', got something else.")
-var InvalidAlias = errors.New("Invalid alias.")
-var InvalidColumnAlias = errors.New("Column alias not recognized.")
-var InvalidWhereClause = errors.New("Expected WHERE clause, got something else.")
-var InvalidConditionColumn = errors.New("Expected condition column.")
-var InvalidComparisonOperator = errors.New("Invalid comparison operator")
-var InvalidLogicalOperator = errors.New("Invalid logical operator")
-var InvalidValueToken = errors.New("Invalid value token.")
-var InvalidDataType = errors.New("Invalid data type.")
-var InvalidConditionAlias = errors.New("Invalid condition alias.")
 
 type Condition struct {
 	Alias              string
@@ -111,7 +95,7 @@ func ValidateAndCreateMetadata(tokens []string) (Metadata, error) {
 
 func validSelect(tokens []string) error {
 	if strings.ToLower(tokens[0]) != "select" {
-		return InvalidSelectToken
+		return pkg.InvalidSelectToken
 	}
 
 	return nil
@@ -139,12 +123,12 @@ func validSelectableColumns(tokens []string) (int, []SelectableColumn, error) {
 		nextToSkip++
 
 		if token == "" {
-			return -1, nil, fmt.Errorf("Selectable column is invalid. Expected column, got something else: %w", InvalidSelectableColumns)
+			return -1, nil, fmt.Errorf("Selectable column is invalid. Expected column, got something else: %w", pkg.InvalidSelectableColumns)
 		}
 
 		if columnMode {
 			if !isEnclosedInQuote(token) {
-				return -1, nil, fmt.Errorf("Selectable columns should be enclosed inside single quotes: %w", InvalidSelectableColumns)
+				return -1, nil, fmt.Errorf("Selectable columns should be enclosed inside single quotes: %w", pkg.InvalidSelectableColumns)
 			}
 
 			// check proper column with alias
@@ -152,7 +136,7 @@ func validSelectableColumns(tokens []string) (int, []SelectableColumn, error) {
 			splitted := strings.Split(columnOnly, ".")
 
 			if len(splitted) != 2 {
-				return -1, nil, fmt.Errorf("Selectable columns have to be in form {alias}.{columnName}: %w", InvalidSelectableColumns)
+				return -1, nil, fmt.Errorf("Selectable columns have to be in form {alias}.{columnName}: %w", pkg.InvalidSelectableColumns)
 			}
 
 			columnNamesToValidate = append(columnNamesToValidate, splitted[1])
@@ -177,7 +161,7 @@ func validSelectableColumns(tokens []string) (int, []SelectableColumn, error) {
 
 		if commaMode {
 			if token != "," {
-				return -1, nil, fmt.Errorf("Invalid column separator. Expected comma (,), got something else: %w", InvalidSelectableColumns)
+				return -1, nil, fmt.Errorf("Invalid column separator. Expected comma (,), got something else: %w", pkg.InvalidSelectableColumns)
 			}
 
 			columnMode = true
@@ -190,7 +174,7 @@ func validSelectableColumns(tokens []string) (int, []SelectableColumn, error) {
 		if i < len(columnNamesToValidate)-1 {
 			next := columnNamesToValidate[i+1]
 			if next == s {
-				return -1, nil, fmt.Errorf("Duplicate column found: %w", InvalidDuplicatedColumn)
+				return -1, nil, fmt.Errorf("Duplicate column found: %w", pkg.InvalidDuplicatedColumn)
 			}
 		}
 	}
@@ -200,7 +184,7 @@ func validSelectableColumns(tokens []string) (int, []SelectableColumn, error) {
 
 func validateFrom(token string) error {
 	if strings.ToLower(token) != "from" {
-		return InvalidFromToken
+		return pkg.InvalidFromToken
 	}
 
 	return nil
@@ -210,24 +194,24 @@ func validatePath(token string) (string, error) {
 	// validate csv file path
 	splitPath := strings.Split(token, ":")
 	if len(splitPath) != 2 {
-		return "", InvalidFilePathToken
+		return "", pkg.InvalidFilePathToken
 	}
 
 	if splitPath[0] != "path" {
-		return "", InvalidFilePathToken
+		return "", pkg.InvalidFilePathToken
 	}
 
 	// get the actual path part and validate that it exists
 	path := splitPath[1]
 	stat, err := os.Stat(path)
 	if err != nil {
-		return "", fmt.Errorf("File path %s does not exist: %w", path, InvalidFilePathToken)
+		return "", fmt.Errorf("File path %s does not exist: %w", path, pkg.InvalidFilePathToken)
 	}
 
 	// validate that the file is an actual .csv file
 	nameSplit := strings.Split(stat.Name(), ".")
 	if nameSplit[1] != "csv" {
-		return "", fmt.Errorf("File %s is not a csv file or it does not have a csv extension: %w", path, InvalidFilePathToken)
+		return "", fmt.Errorf("File %s is not a csv file or it does not have a csv extension: %w", path, pkg.InvalidFilePathToken)
 	}
 
 	return path, nil
@@ -235,7 +219,7 @@ func validatePath(token string) (string, error) {
 
 func validateAsToken(token string) error {
 	if strings.ToLower(token) != "as" {
-		return InvalidAsToken
+		return pkg.InvalidAsToken
 	}
 
 	return nil
@@ -243,7 +227,7 @@ func validateAsToken(token string) error {
 
 func validateAlias(token string) (string, error) {
 	if token == "" {
-		return "", InvalidAlias
+		return "", pkg.InvalidAlias
 	}
 
 	return token, nil
@@ -256,7 +240,7 @@ func validateSelectableColumnAlias(alias string, selectableColumns []SelectableC
 
 	for _, c := range selectableColumns {
 		if c.Alias != alias {
-			return fmt.Errorf("Expected alias %s, got %s for column %s: %w", alias, c.Alias, c.Column, InvalidColumnAlias)
+			return fmt.Errorf("Expected alias %s, got %s for column %s: %w", alias, c.Alias, c.Column, pkg.InvalidColumnAlias)
 		}
 	}
 
@@ -268,7 +252,7 @@ func validateWhereClause(token string) error {
 		return nil
 	}
 	if strings.ToLower(token) != "where" {
-		return InvalidWhereClause
+		return pkg.InvalidWhereClause
 	}
 
 	return nil
@@ -300,18 +284,18 @@ func validateConditions(alias string, tokens []string, startIdx int) ([]Conditio
 
 	validateColumn := func(c string) (string, error) {
 		if !isEnclosedInQuote(c) {
-			return "", InvalidSelectableColumns
+			return "", pkg.InvalidSelectableColumns
 		}
 
 		columnOnly := c[1 : len(c)-1]
 		splitted := strings.Split(columnOnly, ".")
 
 		if len(splitted) != 2 {
-			return "", fmt.Errorf("Condition column have to be in form {alias}.{columnName}: %w", InvalidConditionColumn)
+			return "", fmt.Errorf("Condition column have to be in form {alias}.{columnName}: %w", pkg.InvalidConditionColumn)
 		}
 
 		if splitted[0] != alias {
-			return "", fmt.Errorf("Invalid condition column alias. Expected %s: %w", alias, InvalidConditionAlias)
+			return "", fmt.Errorf("Invalid condition column alias. Expected %s: %w", alias, pkg.InvalidConditionAlias)
 		}
 
 		return splitted[1], nil
@@ -324,7 +308,7 @@ func validateConditions(alias string, tokens []string, startIdx int) ([]Conditio
 			}
 		}
 
-		return fmt.Errorf("Invalid data type. Expected one of %s, got something else: %w", strings.Join(dataTypes.DataTypes, ","), InvalidDataType)
+		return fmt.Errorf("Invalid data type. Expected one of %s, got something else: %w", strings.Join(dataTypes.DataTypes, ","), pkg.InvalidDataType)
 	}
 
 	extractedColumn, dataType := getColumnAndDataType(column)
@@ -349,11 +333,11 @@ func validateConditions(alias string, tokens []string, startIdx int) ([]Conditio
 	}
 
 	if !found {
-		return conditions, InvalidComparisonOperator
+		return conditions, pkg.InvalidComparisonOperator
 	}
 
 	if !isEnclosedInQuote(value) {
-		return conditions, InvalidValueToken
+		return conditions, pkg.InvalidValueToken
 	}
 
 	logicalOperator := strings.ToLower(tokens[startIdx+3])

@@ -7,12 +7,12 @@ import (
 	"github.com/MarioLegenda/cig/internal/db/fs"
 	"github.com/MarioLegenda/cig/internal/db/selectedColumnMetadata"
 	"github.com/MarioLegenda/cig/internal/syntax/syntaxStructure"
-	"github.com/MarioLegenda/cig/pkg/result"
+	"github.com/MarioLegenda/cig/pkg"
 	"io"
 )
 
 func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata conditionResolver.ColumnMetadata, condition syntaxStructure.Condition, f io.ReadCloser) JobFn {
-	return func(id int, writer chan result.Result[SearchResult], ctx context.Context) {
+	return func(id int, writer chan pkg.Result[SearchResult], ctx context.Context) {
 		results := make(SearchResult, 0)
 		lineReader := fs.NewLineReader(f, true)
 
@@ -20,7 +20,7 @@ func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata cond
 			select {
 			case <-ctx.Done():
 				if ctx.Err() == context.DeadlineExceeded {
-					writer <- result.NewResult[SearchResult](nil, []error{
+					writer <- pkg.NewResult[SearchResult](nil, []error{
 						fmt.Errorf("Deadline exceeded for job %d: %w", id, ctx.Err()),
 					})
 				}
@@ -29,14 +29,14 @@ func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata cond
 			default:
 				lines, err := lineReader()
 				if err != nil {
-					writer <- result.NewResult[SearchResult](nil, []error{
+					writer <- pkg.NewResult[SearchResult](nil, []error{
 						fmt.Errorf("Error in job %d while reading from the file: %w", id, err),
 					})
 					return
 				}
 
 				if len(lines) == 0 {
-					writer <- result.NewResult[SearchResult](results, nil)
+					writer <- pkg.NewResult[SearchResult](results, nil)
 
 					return
 				}
@@ -44,7 +44,7 @@ func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata cond
 				if condition != nil {
 					ok, err := conditionResolver.ResolveCondition(condition, metadata, lines)
 					if err != nil {
-						writer <- result.NewResult[SearchResult](nil, []error{
+						writer <- pkg.NewResult[SearchResult](nil, []error{
 							fmt.Errorf("Error in job %d while reading from the file: %w", id, err),
 						})
 						return
@@ -53,7 +53,7 @@ func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata cond
 					if ok {
 						res, err := createResult(lines, selectedColumns)
 						if err != nil {
-							writer <- result.NewResult[SearchResult](nil, []error{
+							writer <- pkg.NewResult[SearchResult](nil, []error{
 								fmt.Errorf("Error in job %d while reading from the file: %w", id, err),
 							})
 
@@ -65,7 +65,7 @@ func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata cond
 				} else {
 					res, err := createResult(lines, selectedColumns)
 					if err != nil {
-						writer <- result.NewResult[SearchResult](nil, []error{
+						writer <- pkg.NewResult[SearchResult](nil, []error{
 							fmt.Errorf("Error in job %d while reading from the file: %w", id, err),
 						})
 
