@@ -1,4 +1,4 @@
-package result
+package pkg
 
 type result[T any] struct {
 	errs   []error

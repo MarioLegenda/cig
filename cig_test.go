@@ -2,7 +2,7 @@ package cig
 
 import (
 	"github.com/MarioLegenda/cig/internal/job"
-	"github.com/MarioLegenda/cig/pkg/result"
+	"github.com/MarioLegenda/cig/pkg"
 	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
@@ -93,7 +93,7 @@ func TestParallelRun(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	c := New()
 
-	results := make(chan result.Result[job.SearchResult], 10)
+	results := make(chan pkg.Result[job.SearchResult], 10)
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func() {
