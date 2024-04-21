@@ -7,6 +7,7 @@ import (
 	"github.com/MarioLegenda/cig/pkg"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -318,12 +319,6 @@ func validateConditions(alias string, tokens []string, startIdx int) ([]Conditio
 		return conditions, err
 	}
 
-	if dataType != "" {
-		if err := validateDataType(dataType); err != nil {
-			return conditions, err
-		}
-	}
-
 	found := false
 	for _, o := range operators.Operators {
 		if operator == o {
@@ -338,6 +333,26 @@ func validateConditions(alias string, tokens []string, startIdx int) ([]Conditio
 
 	if !isEnclosedInQuote(value) {
 		return conditions, pkg.InvalidValueToken
+	}
+
+	if dataType != "" {
+		if err := validateDataType(dataType); err != nil {
+			return conditions, err
+		}
+
+		if dataType == dataTypes.Int {
+			_, err := strconv.ParseInt(value[1:len(value)-1], 10, 64)
+			if err != nil {
+				return conditions, fmt.Errorf("Expected a valid integer, got something else: %w", pkg.InvalidDataType)
+			}
+		}
+
+		if dataType == dataTypes.Float {
+			_, err := strconv.ParseFloat(value[1:len(value)-1], 64)
+			if err != nil {
+				return conditions, fmt.Errorf("Expected a valid float, got something else: %w", pkg.InvalidDataType)
+			}
+		}
 	}
 
 	logicalOperator := strings.ToLower(tokens[startIdx+3])
