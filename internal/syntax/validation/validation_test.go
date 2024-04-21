@@ -156,6 +156,13 @@ func TestValidDataTypes(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestValidConstraints(t *testing.T) {
+	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b'::int = '5' Or 'g.b' = 'b' LIMIT 6 OFFSET 12 ORDER BY 'g.Year'    ,'g.Entity'    DESC"
+	_, err := ValidateAndCreateMetadata(tokenizer.Tokenize(sql))
+
+	assert.Nil(t, err)
+}
+
 func TestValidMetadata(t *testing.T) {
 	sql := `
 SELECT   

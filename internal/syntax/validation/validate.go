@@ -11,6 +11,13 @@ import (
 	"strings"
 )
 
+type Limit = int
+type Offset = int
+type OrderBy struct {
+	Columns   []string
+	Direction string
+}
+
 type Condition struct {
 	Alias              string
 	Value              string
@@ -85,6 +92,9 @@ func ValidateAndCreateMetadata(tokens []string) (Metadata, error) {
 	if err != nil {
 		return Metadata{}, err
 	}
+	currentIdx += len(conditions)*3 + 1
+
+	_, _, _, err = validateConstraints(alias, tokens, currentIdx)
 
 	return Metadata{
 		SelectedColumns: selectableColumns,
@@ -263,10 +273,15 @@ func validateConditions(alias string, tokens []string, startIdx int) ([]Conditio
 	if tokens[startIdx] == "" {
 		return []Condition{}, nil
 	}
+
 	column := tokens[startIdx]
 	operator := tokens[startIdx+1]
 	value := tokens[startIdx+2]
+
 	conditions := make([]Condition, 0)
+	if column == "limit" || column == "offset" || column == "order" {
+		return conditions, nil
+	}
 
 	getColumnAndDataType := func(c string) (string, string) {
 		dtSplit := strings.Split(c, "::")
@@ -386,4 +401,49 @@ func validateConditions(alias string, tokens []string, startIdx int) ([]Conditio
 	}
 
 	return conditions, nil
+}
+
+func validateConstraints(alias string, tokens []string, startIdx int) (Limit, Offset, OrderBy, error) {
+	columns := make([]string, 0)
+	var direction string
+	
+	for i := startIdx; i < len(tokens); i++ {
+		token := tokens[startIdx]
+
+		if token == "order" {
+			if strings.ToLower(tokens[i+1]) != "by" {
+				return 0, 0, OrderBy{}, fmt.Errorf("Expected BY, got something else: %w", pkg.InvalidOrderBy)
+			}
+
+			firstColumn := tokens[i+2]
+			if !isEnclosedInQuote(firstColumn) {
+				return 0, 0, OrderBy{}, fmt.Errorf("Invalid ORDER BY column. Colums must be enclosed by single quotes: %w", pkg.InvalidOrderBy)
+			}
+
+			columns = append(columns, firstColumn)
+
+			a := i + 3
+			for a < len(tokens) {
+				comma := tokens[a]
+
+				if comma == "," {
+					nextColumn := a + 1
+					if !isEnclosedInQuote(tokens[nextColumn]) {
+						return 0, 0, OrderBy{}, fmt.Errorf("Invalid ORDER BY column. Colums must be enclosed by single quotes: %w", pkg.InvalidOrderBy)
+					}
+
+					a = a + 1
+					continue
+				} else if strings.ToLower(comma) == "desc" || strings.ToLower(comma) == "asc" {
+					direction = comma
+				}
+
+				break
+			}
+		}
+	}
+
+	return 0, 0, OrderBy{
+		Direction: direction,
+	}, nil
 }
