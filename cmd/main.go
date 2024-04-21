@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/MarioLegenda/cig"
+)
 
 func main() {
 	tryCig()
@@ -18,61 +21,52 @@ func main() {
 }
 
 func tryCig() {
-	sql := `              			
+	/*	sql := `
 
 
-SELECT 
-    
-    
-    
-    'e.Year'
-     ,    'e.Industry_aggregation_NZSIOC' 
-		FROM 
-		    path:../testdata/example.csv   			AS			     e 
-		WHERE 				'e.Year'::int 
-		    
-		    
-		    > 			
-		    
-		    
-		                       '2013'			 
-		ORDER 
-		    
-		    
-		    
-		    BY 
-		    
-		    
-		    
-	'e.Year'        ,
-		    
-		    
-		    'e.Industry_ag      gregation_NZSIOC'                        
-		LIMIT                 		10 
-		    OFFSET 
-		    
-		    
-		    
-		    
-		    4
-		
-		
-		
-		
-		`
+		SELECT
 
-	tokens := validateAndParse(sql)
 
-	for _, t := range tokens {
-		fmt.Println(t)
-	}
+
+		    'e.Year'
+		     ,    'e.Industry_aggregation_NZSIOC'
+				FROM
+				    path:../testdata/example.csv   			AS			     e
+				WHERE 				'e.Year'::int
+
+
+				    >
+
+
+				                       '2013'
+
+
+
+
+
+
+
+
+
+				`*/
+
+	sql := "SELECT 'e.Industry_aggregation_NZSIOC','e.Year' FROM path:../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::int = 'Level 1' AND 'e.Year' != '2021' OR 'e.Industry_aggregation_NZSIOC'::float = 'Level 3' OR 'e.Variable_code'::string <= 'some value'"
+
+	c := cig.New()
+
+	result := c.Run(sql)
+
+	fmt.Println(result.Errors(), len(result.Errors()))
+
+	//fmt.Println(result.Result())
+
 }
 
 func validateAndParse(sql string) []string {
-	i := 0
 
 	tokens := make([]string, 0)
 	buf := make([]byte, 0)
+	i := 0
 	for i < len(sql) {
 		b := sql[i]
 
@@ -84,6 +78,7 @@ func validateAndParse(sql string) []string {
 		quoteMode := false
 		for i < len(sql) {
 			b = sql[i]
+
 			if b == 39 && !quoteMode {
 				quoteMode = true
 			} else if b == 39 && quoteMode {
@@ -94,18 +89,35 @@ func validateAndParse(sql string) []string {
 				buf = append(buf, b)
 				i++
 				continue
-			} else if b != 10 && b != 9 && b != 32 {
+			}
+
+			if !quoteMode && b == 44 {
+				if len(buf) != 0 {
+					tokens = append(tokens, string(buf))
+				}
+
+				tokens = append(tokens, ",")
+				buf = make([]byte, 0)
+				i++
+				break
+			}
+
+			if b != 10 && b != 9 && b != 32 {
 				buf = append(buf, b)
 				i++
 				continue
 			}
 
 			if len(buf) != 0 {
-				tokens = append(tokens, string(buf))
-				buf = make([]byte, 0)
 				break
 			}
 		}
+
+		if len(buf) != 0 {
+			tokens = append(tokens, string(buf))
+		}
+
+		buf = make([]byte, 0)
 
 		return append(tokens, validateAndParse(sql[i:])...)
 	}
