@@ -58,56 +58,8 @@ func NewStructure(sql string) result.Result[Structure] {
 		condition:   resolveWhereClause(metadata.Conditions),
 		constraints: resolveConstraints([]string{}),
 	}
-	
+
 	return result.NewResult[Structure](t, nil)
-}
-
-func combineNonSeparatableParts(chunks []string) []string {
-	combinedChunks := make([]string, 0)
-
-	combineMode := false
-	base := ""
-	for _, c := range chunks {
-		if strings.ToLower(c) == "select" {
-			combineMode = true
-			combinedChunks = append(combinedChunks, c)
-			continue
-		}
-
-		if strings.ToLower(c) == "from" {
-			combinedChunks = append(combinedChunks, base)
-			combineMode = false
-		}
-
-		if combineMode {
-			base += c
-		}
-
-		if !combineMode {
-			combinedChunks = append(combinedChunks, c)
-		}
-	}
-
-	return combinedChunks
-}
-
-func splitColumns(c string) []string {
-	if c == "*" {
-		return []string{"*"}
-	}
-
-	split := strings.Split(c, ",")
-	for i, s := range split {
-		split[i] = s[1 : len(s)-1]
-	}
-
-	return split
-}
-
-func resolveFiles(path, alias string) (string, string) {
-	p := strings.Split(path, ":")
-
-	return p[1], alias
 }
 
 func resolveWhereClause(conditions []validation.Condition) syntaxStructure.Condition {
@@ -199,13 +151,4 @@ func resolveConstraints(chunks []string) syntaxStructure.StructureConstraints {
 	}
 
 	return syntaxStructure.NewConstraints(limit, offset)
-}
-
-func getColumnDataOnlyIfDataTypeExists(column string) (string, string) {
-	split := strings.Split(column, "::")
-	if len(split) == 2 {
-		return split[0], split[1]
-	}
-
-	return column, ""
 }
