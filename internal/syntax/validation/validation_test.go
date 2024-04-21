@@ -125,8 +125,8 @@ func TestValidConditions(t *testing.T) {
 		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' or 'g.b' 56 b":          pkg.InvalidComparisonOperator,
 		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' Or 'g.b' = b":           pkg.InvalidValueToken,
 		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b'::unknown = 'b' Or 'g.b' = b":  pkg.InvalidDataType,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' Or 'g.b'::unknown = b":  pkg.InvalidDataType,
-		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' ANd 'g.b'::unknown = b": pkg.InvalidDataType,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' Or 'g.b'::unknown = b":  pkg.InvalidValueToken,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b' = 'b' ANd 'g.b'::unknown = b": pkg.InvalidValueToken,
 	}
 
 	for sql, stmtErr := range statements {
@@ -135,6 +135,25 @@ func TestValidConditions(t *testing.T) {
 		assert.NotNil(t, err)
 		assert.True(t, errors.Is(err, stmtErr))
 	}
+}
+
+func TestValidDataTypes(t *testing.T) {
+	invalidIntDataTypeSql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b'::int = 'b' Or 'g.b' = 'b'"
+	_, err := ValidateAndCreateMetadata(tokenizer.Tokenize(invalidIntDataTypeSql))
+
+	assert.NotNil(t, err)
+	assert.True(t, errors.Is(err, pkg.InvalidDataType))
+
+	invalidFloatDataTypeSql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b'::float = 'b' Or 'g.b' = 'b'"
+	_, err = ValidateAndCreateMetadata(tokenizer.Tokenize(invalidFloatDataTypeSql))
+
+	assert.NotNil(t, err)
+	assert.True(t, errors.Is(err, pkg.InvalidDataType))
+
+	validDataTypeSql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b'::int = '3' Or 'g.b'::float = '4.56'"
+	_, err = ValidateAndCreateMetadata(tokenizer.Tokenize(validDataTypeSql))
+
+	assert.Nil(t, err)
 }
 
 func TestValidMetadata(t *testing.T) {

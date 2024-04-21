@@ -29,7 +29,7 @@ func TestStructureValid(t *testing.T) {
 }
 
 func TestStructureWithMultipleConditions(t *testing.T) {
-	sql := "SELECT 'e.Industry_aggregation_NZSIOC','e.Year' FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::int = 'Level 1' AND 'e.Year' != '2021' OR 'e.Industry_aggregation_NZSIOC'::float = 'Level 3' OR 'e.Variable_code'::string <= 'some value'"
+	sql := "SELECT 'e.Industry_aggregation_NZSIOC','e.Year' FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC' = 'Level 1' AND 'e.Year'::int != '2021' OR 'e.Industry_aggregation_NZSIOC' = 'Level 3' OR 'e.Variable_code'::string <= 'some value'"
 
 	res := NewStructure(sql)
 
@@ -43,7 +43,7 @@ func TestStructureWithMultipleConditions(t *testing.T) {
 	head := res.Result().Condition()
 	assert.Equal(t, head.Column().Alias(), "e")
 	assert.Equal(t, head.Column().Column(), "Industry_aggregation_NZSIOC")
-	assert.Equal(t, head.Column().DataType(), dataTypes.Int)
+	assert.Equal(t, head.Column().DataType(), "")
 	assert.Equal(t, head.Value().Value(), "Level 1")
 
 	andOperator := head.Next()
@@ -54,6 +54,7 @@ func TestStructureWithMultipleConditions(t *testing.T) {
 
 	secondCondition := andOperator.Next()
 	assert.Equal(t, secondCondition.Column().Alias(), "e")
+	assert.Equal(t, secondCondition.Column().DataType(), dataTypes.Int)
 	assert.Equal(t, secondCondition.Column().Column(), "Year")
 	assert.Equal(t, secondCondition.Value().Value(), "2021")
 
@@ -64,7 +65,7 @@ func TestStructureWithMultipleConditions(t *testing.T) {
 
 	thirdCondition := orOperator.Next()
 	assert.Equal(t, thirdCondition.Column().Alias(), "e")
-	assert.Equal(t, thirdCondition.Column().DataType(), dataTypes.Float)
+	assert.Equal(t, thirdCondition.Column().DataType(), "")
 	assert.Equal(t, thirdCondition.Column().Column(), "Industry_aggregation_NZSIOC")
 	assert.Equal(t, thirdCondition.Value().Value(), "Level 3")
 
