@@ -22,6 +22,7 @@ func ResolveCondition(condition syntaxStructure.Condition, metadata ColumnMetada
 
 	head := condition
 	var prevOp string
+
 	// setup
 	for head != nil {
 		next := head.Next()
@@ -44,7 +45,7 @@ func ResolveCondition(condition syntaxStructure.Condition, metadata ColumnMetada
 					toCompareValue: lines[p],
 					dataType:       head.Column().DataType(),
 					incomingValue:  head.Value().Value(),
-					op:             head.Operator().Original(),
+					op:             head.Operator().ConditionType(),
 				})
 				prevOp = operators.OrOperator
 			}

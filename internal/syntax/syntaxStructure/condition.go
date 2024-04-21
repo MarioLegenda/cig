@@ -1,7 +1,5 @@
 package syntaxStructure
 
-import "strings"
-
 type Condition interface {
 	Value() ConditionValue
 	Next() Condition
@@ -16,17 +14,14 @@ type Condition interface {
 type ConditionColumn interface {
 	Alias() string
 	Column() string
-	Original() string
 	DataType() string
 }
 
 type ConditionOperator interface {
-	Original() string
 	ConditionType() string
 }
 
 type ConditionValue interface {
-	Original() string
 	Value() string
 }
 
@@ -53,10 +48,6 @@ func (cc conditionColumn) Column() string {
 	return cc.column
 }
 
-func (cc conditionColumn) Original() string {
-	return cc.original
-}
-
 func (cc conditionColumn) DataType() string {
 	return cc.dataType
 }
@@ -66,10 +57,6 @@ type conditionOperator struct {
 	conditionType string
 }
 
-func (co conditionOperator) Original() string {
-	return co.original
-}
-
 func (co conditionOperator) ConditionType() string {
 	return co.conditionType
 }
@@ -77,10 +64,6 @@ func (co conditionOperator) ConditionType() string {
 type conditionValue struct {
 	original string
 	value    string
-}
-
-func (cv conditionValue) Original() string {
-	return cv.original
 }
 
 func (cv conditionValue) Value() string {
@@ -118,15 +101,15 @@ func (i *condition) Operator() ConditionOperator {
 func (i *condition) String() string {
 	base := ""
 	if i.column != nil {
-		base += i.column.Original() + " "
+		base += i.column.Column() + " "
 	}
 
 	if i.operator != nil {
-		base += i.operator.Original() + " "
+		base += i.operator.ConditionType() + " "
 	}
 
 	if i.value != nil {
-		base += i.value.Original()
+		base += i.value.Value()
 	}
 
 	return base
@@ -152,7 +135,6 @@ func NewConditionColumn(alias, column, dataType, original string) ConditionColum
 }
 
 func NewConditionOperator(t, original string) ConditionOperator {
-	strings.Split(original, "::")
 	return conditionOperator{
 		original:      original,
 		conditionType: t,

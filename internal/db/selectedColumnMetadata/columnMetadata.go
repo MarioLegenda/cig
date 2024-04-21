@@ -47,7 +47,7 @@ func New(selectedColumns []string, allColumns []string) ColumnMetadata {
 				continue
 			}
 
-			if t[2:] == s {
+			if t == s {
 				positions = append(positions, i)
 				names = append(names, s)
 			}
