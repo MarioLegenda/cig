@@ -2,6 +2,7 @@ package validation
 
 import (
 	"errors"
+	"github.com/MarioLegenda/cig/internal/syntax/operators"
 	"github.com/MarioLegenda/cig/internal/syntax/tokenizer"
 	"github.com/MarioLegenda/cig/pkg"
 	"github.com/stretchr/testify/assert"
@@ -157,10 +158,19 @@ func TestValidDataTypes(t *testing.T) {
 }
 
 func TestValidConstraints(t *testing.T) {
-	sql := "SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b'::int = '5' Or 'g.b' = 'b' LIMIT 6 OFFSET 12 ORDER BY 'g.Year'    ,'g.Entity'    DESC"
-	_, err := ValidateAndCreateMetadata(tokenizer.Tokenize(sql))
+	statements := map[string]error{
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b'::int = '5' Or 'g.b' = 'b' LIMIT 6 OFFSET 12 ORDER B 'g.Year'    ,    'g.Entity','g.OtherColumn'    DESC": pkg.InvalidOrderBy,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b'::int = '5' Or 'g.b' = 'b' LIMIT 6 OFFSET 12 ORDER By 'g.Year    ,'g.Entity'    DESC":                     pkg.InvalidOrderBy,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b'::int = '5' Or 'g.b' = 'b' LIMIT 6 OFFSET 12 ORDER By 'g.Year'    ,    g.Entity'    DESC":                 pkg.InvalidOrderBy,
+		"SELECT      *      FROM path:../../../testdata/example.csv As g WHERE 'g.b'::int = '5' Or 'g.b' = 'b' LIMIT 6 OFFSET 12 ORDER By 'g.Year'    ,    'a.Entity'    DESC":                pkg.InvalidOrderBy,
+	}
 
-	assert.Nil(t, err)
+	for sql, sqlErr := range statements {
+		_, err := ValidateAndCreateMetadata(tokenizer.Tokenize(sql))
+
+		assert.NotNil(t, err)
+		assert.True(t, errors.Is(err, sqlErr))
+	}
 }
 
 func TestValidMetadata(t *testing.T) {
@@ -173,7 +183,7 @@ SELECT
 	    
 	    OR 'e.columnThree'::int = '6'
 	    AND 'e.columnFour'::float = '6.6'
-	    
+	    LIMIT 6 ORDER BY 'e.columnThree'   ,'e.columnFour' DESC offset     8
 	    `
 
 	metadata, err := ValidateAndCreateMetadata(tokenizer.Tokenize(sql))
@@ -184,4 +194,11 @@ SELECT
 	assert.Equal(t, metadata.Alias, "e")
 	assert.Equal(t, metadata.FilePath, "../../../testdata/example.csv")
 	assert.Equal(t, len(metadata.Conditions), 4)
+
+	assert.NotNil(t, metadata.OrderBy)
+	assert.Equal(t, len(metadata.OrderBy.Columns), 2)
+	assert.Equal(t, metadata.OrderBy.Direction, operators.Desc)
+
+	assert.Equal(t, metadata.Offset, int64(8))
+	assert.Equal(t, metadata.Limit, int64(6))
 }

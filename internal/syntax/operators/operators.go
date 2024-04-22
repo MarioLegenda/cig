@@ -23,6 +23,9 @@ const LimitConstraint = "limit"
 const OffsetConstraint = "offset"
 const OrderByConstraint = "order by"
 
+const Asc = "asc"
+const Desc = "desc"
+
 var Constraints = []string{
 	LimitConstraint,
 	OffsetConstraint,
