@@ -108,7 +108,7 @@ func TestValidWhereClause(t *testing.T) {
 	_, err := ValidateAndCreateMetadata(tokenizer.Tokenize(sql))
 
 	assert.NotNil(t, err)
-	assert.True(t, errors.Is(err, pkg.InvalidWhereClause))
+	assert.True(t, errors.Is(err, pkg.InvalidToken))
 }
 
 func TestValidConditions(t *testing.T) {

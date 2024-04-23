@@ -50,7 +50,7 @@ func tryCig() {
 
 				`*/
 
-	sql := "SELECT * FROM path:../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::string = 'Level 1' LIMIT 10"
+	sql := "SELECT * FROM path:../testdata/example.csv AS e"
 
 	c := cig.New()
 
@@ -58,6 +58,7 @@ func tryCig() {
 
 	fmt.Println(result.Errors(), len(result.Errors()))
 
+	fmt.Println(len(result.Result()))
 	//fmt.Println(result.Result())
 
 }

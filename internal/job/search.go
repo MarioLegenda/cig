@@ -11,11 +11,14 @@ import (
 	"io"
 )
 
-func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata conditionResolver.ColumnMetadata, condition syntaxStructure.Condition, f io.ReadCloser) JobFn {
+func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata conditionResolver.ColumnMetadata, condition syntaxStructure.Condition, constraints syntaxStructure.StructureConstraints, f io.ReadCloser) JobFn {
 	return func(id int, writer chan pkg.Result[SearchResult], ctx context.Context) {
 		results := make(SearchResult, 0)
 		lineReader := fs.NewLineReader(f, true)
+		limit := constraints.Limit()
 
+		var currentCollectedLimit int64
+		
 		for {
 			select {
 			case <-ctx.Done():
@@ -41,6 +44,11 @@ func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata cond
 					return
 				}
 
+				if limit != nil && currentCollectedLimit == limit.Value() {
+					writer <- pkg.NewResult[SearchResult](results, nil)
+					return
+				}
+
 				if condition != nil {
 					ok, err := conditionResolver.ResolveCondition(condition, metadata, lines)
 					if err != nil {
@@ -60,6 +68,10 @@ func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata cond
 							return
 						}
 
+						if limit != nil {
+							currentCollectedLimit++
+						}
+
 						results = append(results, res)
 					}
 				} else {
@@ -70,6 +82,10 @@ func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata cond
 						})
 
 						return
+					}
+
+					if limit != nil {
+						currentCollectedLimit++
 					}
 
 					results = append(results, res)

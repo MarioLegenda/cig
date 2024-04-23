@@ -89,6 +89,30 @@ func TestGettingResultsOfMultipleSelectedColumn(t *testing.T) {
 	assert.Equal(t, 18540, len(foundResults))
 }
 
+func TestGettingResultsWithLimit(t *testing.T) {
+	c := New()
+
+	statements := []string{
+		"SELECT 'e.Year' FROM path:testdata/example.csv AS e WHERE 'e.Year'::int > '2013' LIMIT 50",
+		"SELECT 'e.Year' FROM path:testdata/example.csv AS e limit 50",
+		"SELECT 'e.Year' FROM path:testdata/example.csv AS e offset 30 limit 50",
+		"SELECT 'e.Year' FROM path:testdata/example.csv AS e offset 30 ORDER BY 'e.Year' limit 50",
+		"SELECT 'e.Year' FROM path:testdata/example.csv AS e ORDER BY 'e.Year' offset 30  limit 50",
+		"SELECT 'e.Year' FROM path:testdata/example.csv AS e limit     50     ORDER BY 'e.Year'   ",
+	}
+
+	for _, s := range statements {
+		res := c.Run(s)
+
+		assert.False(t, res.HasErrors())
+		assert.Equal(t, 0, len(res.Errors()))
+
+		foundResults := res.Result()
+
+		assert.Equal(t, 50, len(foundResults))
+	}
+}
+
 func TestParallelRun(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	c := New()
