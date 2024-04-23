@@ -11,12 +11,8 @@ import (
 	"io"
 )
 
-func sendResult(results SearchResult, writer chan pkg.Result[SearchResult]) {
-	writer <- pkg.NewResult[SearchResult](results, nil)
-}
-
-func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata conditionResolver.ColumnMetadata, condition syntaxStructure.Condition, constraints syntaxStructure.StructureConstraints, f io.ReadCloser) JobFn {
-	return func(id int, writer chan pkg.Result[SearchResult], ctx context.Context) {
+func SearchFactory(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata conditionResolver.ColumnMetadata, condition syntaxStructure.Condition, constraints syntaxStructure.StructureConstraints, f io.ReadCloser) SearchFn {
+	return func(id int, ctx context.Context) pkg.Result[SearchResult] {
 		results := make(SearchResult, 0)
 		lineReader := fs.NewLineReader(f, true)
 		limit := constraints.Limit()
@@ -29,25 +25,18 @@ func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata cond
 			select {
 			case <-ctx.Done():
 				if ctx.Err() == context.DeadlineExceeded {
-					writer <- pkg.NewResult[SearchResult](nil, []error{
-						fmt.Errorf("Deadline exceeded for job %d: %w", id, ctx.Err()),
-					})
+					return pkg.NewResult[SearchResult](results, nil)
 				}
-
-				return
 			default:
 				lines, err := lineReader()
 				if err != nil {
-					writer <- pkg.NewResult[SearchResult](nil, []error{
+					return pkg.NewResult[SearchResult](nil, []error{
 						fmt.Errorf("Error in job %d while reading from the file: %w", id, err),
 					})
-					return
 				}
 
 				if len(lines) == 0 {
-					sendResult(results, writer)
-
-					return
+					return pkg.NewResult[SearchResult](results, nil)
 				}
 
 				if offset != nil && currentCollectedOffset < offset.Value() {
@@ -57,27 +46,23 @@ func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata cond
 				}
 
 				if limit != nil && currentCollectedLimit == limit.Value() {
-					sendResult(results, writer)
-					return
+					return pkg.NewResult[SearchResult](results, nil)
 				}
 
 				if condition != nil {
 					ok, err := conditionResolver.ResolveCondition(condition, metadata, lines)
 					if err != nil {
-						writer <- pkg.NewResult[SearchResult](nil, []error{
+						return pkg.NewResult[SearchResult](nil, []error{
 							fmt.Errorf("Error in job %d while reading from the file: %w", id, err),
 						})
-						return
 					}
 
 					if ok {
 						res, err := createResult(lines, selectedColumns)
 						if err != nil {
-							writer <- pkg.NewResult[SearchResult](nil, []error{
+							return pkg.NewResult[SearchResult](nil, []error{
 								fmt.Errorf("Error in job %d while reading from the file: %w", id, err),
 							})
-
-							return
 						}
 
 						if limit != nil {
@@ -89,11 +74,9 @@ func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata cond
 				} else {
 					res, err := createResult(lines, selectedColumns)
 					if err != nil {
-						writer <- pkg.NewResult[SearchResult](nil, []error{
+						return pkg.NewResult[SearchResult](nil, []error{
 							fmt.Errorf("Error in job %d while reading from the file: %w", id, err),
 						})
-
-						return
 					}
 
 					if limit != nil {
@@ -105,19 +88,4 @@ func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata cond
 			}
 		}
 	}
-}
-
-func createResult(lines []string, selectedColumns selectedColumnMetadata.ColumnMetadata) (map[string]string, error) {
-	res := make(map[string]string)
-	for linePosition, line := range lines {
-		if selectedColumns.HasPosition(linePosition) {
-			columnName := selectedColumns.Column(linePosition)
-			if columnName == "" {
-				return nil, fmt.Errorf("Column not found for position %d. This should not happen and is a bug", linePosition)
-			}
-			res[columnName] = line
-		}
-	}
-
-	return res, nil
 }

@@ -5,7 +5,6 @@ import (
 	"github.com/MarioLegenda/cig/internal/db/conditionResolver"
 	"github.com/MarioLegenda/cig/internal/db/selectedColumnMetadata"
 	job2 "github.com/MarioLegenda/cig/internal/job"
-	"github.com/MarioLegenda/cig/internal/scheduler"
 	"github.com/MarioLegenda/cig/internal/syntax"
 	"github.com/MarioLegenda/cig/pkg"
 	"time"
@@ -38,64 +37,16 @@ func (d *db) Run(s syntax.Structure) pkg.Result[job2.SearchResult] {
 	conditionColumnMetadata := createConditionColumnMetadata(d.files[file.Alias()])
 	selectedColumns := createSelectedColumnMetadata(s, d.files[file.Alias()])
 
-	jobId := 0
-	workerScheduler := scheduler.New()
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
 
 	if s.Condition() != nil {
-		if err := workerScheduler.Schedule(jobId); err != nil {
-			errs = append(errs, err)
-			return pkg.NewResult[job2.SearchResult](nil, errs)
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-		defer cancel()
-
-		workerScheduler.Send(
-			jobId,
-			job2.Search(
-				selectedColumns,
-				conditionColumnMetadata,
-				s.Condition(),
-				s.Constraints(),
-				fileHandler,
-			),
-			ctx,
-		)
-	} else {
-		if err := workerScheduler.Schedule(jobId); err != nil {
-			errs = append(errs, err)
-			return pkg.NewResult[job2.SearchResult](nil, errs)
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-		defer cancel()
-		workerScheduler.Send(
-			jobId,
-			job2.Search(
-				selectedColumns,
-				conditionColumnMetadata,
-				nil,
-				s.Constraints(),
-				fileHandler,
-			),
-			ctx,
-		)
+		fn := job2.SearchFactory(selectedColumns, conditionColumnMetadata, s.Condition(), s.Constraints(), fileHandler)
+		return fn(0, ctx)
 	}
 
-	if err := workerScheduler.Start(); err != nil {
-		errs = append(errs, err)
-		return pkg.NewResult[job2.SearchResult](nil, errs)
-	}
-
-	processedResults, resErrs := processResults(workerScheduler.Results())
-	if resErrs != nil {
-		errs = append(errs, resErrs...)
-		return pkg.NewResult[job2.SearchResult](nil, errs)
-	}
-
-	workerScheduler.Close()
-
-	return pkg.NewResult[job2.SearchResult](processedResults, nil)
+	fn := job2.SearchFactory(selectedColumns, conditionColumnMetadata, s.Condition(), s.Constraints(), fileHandler)
+	return fn(0, ctx)
 }
 
 func (d *db) Close() pkg.Result[any] {
@@ -120,20 +71,4 @@ func createConditionColumnMetadata(fsMetadata fileMetadata) conditionResolver.Co
 
 func createSelectedColumnMetadata(structure syntax.Structure, fsMetadata fileMetadata) selectedColumnMetadata.ColumnMetadata {
 	return selectedColumnMetadata.New(structure.Column().Columns(), fsMetadata.columns.Names())
-}
-
-func processResults(schedulerResults []pkg.Result[job2.SearchResult]) (job2.SearchResult, []error) {
-	newResults := make(job2.SearchResult, 0)
-	for _, res := range schedulerResults {
-		if res.HasErrors() {
-			return nil, res.Errors()
-		}
-
-		wrappedResults := res.Result()
-		for _, r := range wrappedResults {
-			newResults = append(newResults, r)
-		}
-	}
-
-	return newResults, nil
 }
