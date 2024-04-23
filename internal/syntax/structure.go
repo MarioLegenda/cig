@@ -6,7 +6,6 @@ import (
 	"github.com/MarioLegenda/cig/internal/syntax/tokenizer"
 	"github.com/MarioLegenda/cig/internal/syntax/validation"
 	"github.com/MarioLegenda/cig/pkg"
-	"strconv"
 	"strings"
 )
 
@@ -51,12 +50,12 @@ func NewStructure(sql string) pkg.Result[Structure] {
 	for i, c := range metadata.SelectedColumns {
 		columns[i] = c.Column
 	}
-
+	
 	t := structure{
 		column:      syntaxStructure.NewColumn(columns),
 		fileDb:      syntaxStructure.NewFileDB(metadata.FilePath, metadata.Alias),
 		condition:   resolveWhereClause(metadata.Conditions),
-		constraints: resolveConstraints([]string{}),
+		constraints: resolveConstraints(metadata.Limit, metadata.Offset),
 	}
 
 	return pkg.NewResult[Structure](t, nil)
@@ -121,33 +120,15 @@ func resolveWhereClause(conditions []validation.Condition) syntaxStructure.Condi
 	return head
 }
 
-func resolveConstraints(chunks []string) syntaxStructure.StructureConstraints {
+func resolveConstraints(l int64, o int64) syntaxStructure.StructureConstraints {
 	var limit syntaxStructure.Constraint[int64]
 	var offset syntaxStructure.Constraint[int64]
-	limitMode := false
-	offsetMode := false
-	for _, c := range chunks {
-		if strings.ToLower(c) == "limit" {
-			limitMode = true
-			continue
-		}
+	if l != -1 {
+		limit = syntaxStructure.NewLimit(l)
+	}
 
-		if strings.ToLower(c) == "offset" {
-			offsetMode = true
-			continue
-		}
-
-		if limitMode {
-			l, _ := strconv.ParseInt(c, 10, 64)
-			limit = syntaxStructure.NewLimit(l)
-			limitMode = false
-		}
-
-		if offsetMode {
-			l, _ := strconv.ParseInt(c, 10, 64)
-			offset = syntaxStructure.NewOffset(l)
-			offsetMode = false
-		}
+	if o != -1 {
+		offset = syntaxStructure.NewOffset(o)
 	}
 
 	return syntaxStructure.NewConstraints(limit, offset)

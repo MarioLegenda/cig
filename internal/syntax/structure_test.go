@@ -82,8 +82,6 @@ func TestStructureWithMultipleConditions(t *testing.T) {
 }
 
 func TestLimitConstraintValid(t *testing.T) {
-	t.Skip("")
-
 	sql := "SELECT * FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::string = 'Level 1' LIMIT 10"
 
 	res := NewStructure(sql)
@@ -109,8 +107,6 @@ func TestLimitConstraintValid(t *testing.T) {
 }
 
 func TestOffsetConstraintValid(t *testing.T) {
-	t.Skip("")
-
 	sql := "SELECT * FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::string = 'Level 1' Offset 10"
 
 	res := NewStructure(sql)
@@ -136,8 +132,6 @@ func TestOffsetConstraintValid(t *testing.T) {
 }
 
 func TestAllConstraintValid(t *testing.T) {
-	t.Skip("")
-
 	sql := "SELECT * FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::string = 'Level 1' Offset 10 LIMIT 45"
 
 	res := NewStructure(sql)
