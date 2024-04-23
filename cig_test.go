@@ -113,6 +113,19 @@ func TestGettingResultsWithLimit(t *testing.T) {
 	}
 }
 
+func TestGettingResultsWithOffset(t *testing.T) {
+	c := New()
+
+	res := c.Run("SELECT * FROM path:testdata/example.csv AS e OFFSET 10000")
+
+	assert.False(t, res.HasErrors())
+	assert.Equal(t, 0, len(res.Errors()))
+
+	foundResults := res.Result()
+
+	assert.Equal(t, 10858, len(foundResults))
+}
+
 func TestParallelRun(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	c := New()
