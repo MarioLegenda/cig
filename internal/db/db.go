@@ -41,12 +41,10 @@ func (d *db) Run(s syntax.Structure) pkg.Result[job2.SearchResult] {
 	defer cancel()
 
 	if s.Condition() != nil {
-		fn := job2.SearchFactory(selectedColumns, conditionColumnMetadata, s.Condition(), s.Constraints(), fileHandler)
-		return fn(0, ctx)
+		return job2.SearchFactory(selectedColumns, conditionColumnMetadata, s.Condition(), s.Constraints(), fileHandler)(0, ctx)
 	}
 
-	fn := job2.SearchFactory(selectedColumns, conditionColumnMetadata, s.Condition(), s.Constraints(), fileHandler)
-	return fn(0, ctx)
+	return job2.SearchFactory(selectedColumns, conditionColumnMetadata, s.Condition(), s.Constraints(), fileHandler)(0, ctx)
 }
 
 func (d *db) Close() pkg.Result[any] {
