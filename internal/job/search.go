@@ -16,9 +16,11 @@ func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata cond
 		results := make(SearchResult, 0)
 		lineReader := fs.NewLineReader(f, true)
 		limit := constraints.Limit()
+		offset := constraints.Offset()
 
 		var currentCollectedLimit int64
-		
+		var currentCollectedOffset int64
+
 		for {
 			select {
 			case <-ctx.Done():
@@ -42,6 +44,12 @@ func Search(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata cond
 					writer <- pkg.NewResult[SearchResult](results, nil)
 
 					return
+				}
+
+				if offset != nil && currentCollectedOffset < offset.Value() {
+					currentCollectedOffset++
+
+					continue
 				}
 
 				if limit != nil && currentCollectedLimit == limit.Value() {

@@ -50,7 +50,7 @@ func tryCig() {
 
 				`*/
 
-	sql := "SELECT * FROM path:../testdata/example.csv AS e"
+	sql := "SELECT * FROM path:../testdata/example.csv AS e offset 10000"
 
 	c := cig.New()
 
