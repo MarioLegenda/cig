@@ -101,7 +101,7 @@ func ValidateAndCreateMetadata(tokens []string) (Metadata, error) {
 	if err != nil {
 		return Metadata{}, err
 	}
-	currentIdx += len(conditions)*3 + 1
+	currentIdx += len(conditions) * 3
 
 	limit, offset, orderBy, err := validateConstraints(alias, tokens, currentIdx)
 
@@ -495,6 +495,7 @@ func validateConstraints(alias string, tokens []string, startIdx int) (Limit, Of
 					})
 
 					a = a + 2
+
 					continue
 				} else if strings.ToLower(comma) == "desc" || strings.ToLower(comma) == "asc" {
 					direction = operators.Desc
@@ -505,15 +506,6 @@ func validateConstraints(alias string, tokens []string, startIdx int) (Limit, Of
 
 				break
 			}
-		} else if token == "offset" {
-			nextToken := tokens[i+1]
-
-			value, err := strconv.ParseInt(nextToken, 10, 64)
-			if err != nil {
-				return 0, 0, nil, fmt.Errorf("Expected OFFSET to be a valid integer, got something else: %w: %w", err, pkg.InvalidOrderBy)
-			}
-
-			offset = value
 		} else if token == "offset" {
 			nextToken := tokens[i+1]
 

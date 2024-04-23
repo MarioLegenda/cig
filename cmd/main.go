@@ -50,7 +50,7 @@ func tryCig() {
 
 				`*/
 
-	sql := "SELECT      *      FROM path:../testdata/example.csv As g WHERE 'g.b'::int = '4' Or 'g.b' = 'b' LIMIT 6 OFFSET 12 ORDER BY 'g.Year'    ,'g.Entity'    DESC"
+	sql := "SELECT * FROM path:../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::string = 'Level 1' LIMIT 10"
 
 	c := cig.New()
 
