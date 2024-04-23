@@ -2,6 +2,7 @@ package pkg
 
 import "errors"
 
+var InvalidToken = errors.New("Expected WHERE or LIMIT, OFFSET, ORDER BY, got something else.")
 var InvalidSelectToken = errors.New("Expected 'select', got something else.")
 var InvalidSelectableColumns = errors.New("Expected selectable column")
 var InvalidDuplicatedColumn = errors.New("Duplicated selectable column")

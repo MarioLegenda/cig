@@ -1,5 +1,10 @@
 package validation
 
+import (
+	"github.com/MarioLegenda/cig/pkg"
+	"strings"
+)
+
 type Limit = int64
 type Offset = int64
 
@@ -43,6 +48,11 @@ func ValidateAndCreateMetadata(tokens []string) (Metadata, error) {
 	tokens = append(tokens, make([]string, 100)...)
 	currentIdx := 0
 
+	var conditions []Condition
+	var limit Limit = -1
+	var offset Offset = -1
+	var orderBy *OrderBy
+
 	if err := validSelect(tokens); err != nil {
 		return Metadata{}, err
 	}
@@ -81,18 +91,37 @@ func ValidateAndCreateMetadata(tokens []string) (Metadata, error) {
 	}
 	currentIdx++
 
-	if err := validateWhereClause(tokens[currentIdx]); err != nil {
-		return Metadata{}, err
-	}
-	currentIdx++
-
-	conditions, err := validateConditions(alias, tokens, currentIdx)
+	nextInstruction, err := decideNextInstruction(tokens[currentIdx])
 	if err != nil {
 		return Metadata{}, err
 	}
-	currentIdx += len(conditions) * 3
 
-	limit, offset, orderBy, err := validateConstraints(alias, tokens, currentIdx)
+	if nextInstruction != "" {
+		if nextInstruction == "condition" {
+			if err := validateWhereClause(tokens[currentIdx]); err != nil {
+				return Metadata{}, err
+			}
+			currentIdx++
+
+			c, err := validateConditions(alias, tokens, currentIdx)
+			if err != nil {
+				return Metadata{}, err
+			}
+			currentIdx += len(conditions) * 3
+
+			conditions = c
+		}
+
+		l, o, ob, err := validateConstraints(alias, tokens, currentIdx)
+
+		if err != nil {
+			return Metadata{}, err
+		}
+
+		limit = l
+		offset = o
+		orderBy = ob
+	}
 
 	return Metadata{
 		SelectedColumns: selectableColumns,
@@ -103,4 +132,19 @@ func ValidateAndCreateMetadata(tokens []string) (Metadata, error) {
 		Offset:          offset,
 		Limit:           limit,
 	}, err
+}
+
+func decideNextInstruction(token string) (string, error) {
+	if token == "" {
+		return "", nil
+	}
+
+	t := strings.ToLower(token)
+	if t == "where" {
+		return "condition", nil
+	} else if t == "limit" || t == "offset" || t == "order" {
+		return "constraint", nil
+	}
+
+	return "", pkg.InvalidToken
 }

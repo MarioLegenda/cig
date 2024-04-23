@@ -9,6 +9,7 @@ func validateWhereClause(token string) error {
 	if token == "" {
 		return nil
 	}
+
 	if strings.ToLower(token) != "where" {
 		return pkg.InvalidWhereClause
 	}

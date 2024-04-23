@@ -9,6 +9,10 @@ import (
 )
 
 func validateConstraints(alias string, tokens []string, startIdx int) (Limit, Offset, *OrderBy, error) {
+	if tokens[startIdx] == "" {
+		return -1, -1, nil, nil
+	}
+
 	orderByColumns := make([]OrderByColumn, 0)
 	var direction string
 	var offset Offset = -1
