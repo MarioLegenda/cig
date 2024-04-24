@@ -17,6 +17,7 @@ func SearchFactory(selectedColumns selectedColumnMetadata.ColumnMetadata, metada
 		lineReader := fs.NewLineReader(f, true)
 		limit := constraints.Limit()
 		offset := constraints.Offset()
+		orderBy := constraints.OrderBy()
 
 		var currentCollectedLimit int64
 		var currentCollectedOffset int64
@@ -36,6 +37,10 @@ func SearchFactory(selectedColumns selectedColumnMetadata.ColumnMetadata, metada
 				}
 
 				if len(lines) == 0 {
+					if orderBy != nil {
+						sortResults(results, orderBy)
+					}
+
 					return pkg.NewResult[SearchResult](results, nil)
 				}
 
@@ -46,6 +51,9 @@ func SearchFactory(selectedColumns selectedColumnMetadata.ColumnMetadata, metada
 				}
 
 				if limit != nil && currentCollectedLimit == limit.Value() {
+					if orderBy != nil {
+						sortResults(results, orderBy)
+					}
 					return pkg.NewResult[SearchResult](results, nil)
 				}
 

@@ -33,7 +33,7 @@ func validateConstraints(alias string, tokens []string, startIdx int) (Limit, Of
 			return "", fmt.Errorf("Invalid ORDER BY column. Expected alias %s, got %s: %w", alias, splitted[0], pkg.InvalidOrderBy)
 		}
 
-		return columnOnly, nil
+		return splitted[1], nil
 	}
 
 	/**

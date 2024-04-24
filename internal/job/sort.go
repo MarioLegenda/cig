@@ -1,11 +1,16 @@
 package job
 
+import (
+	"github.com/MarioLegenda/cig/internal/syntax/syntaxStructure"
+	"sort"
+)
+
 type MapResult map[string]string
 
 type sortableResult struct {
 	columns       []string
 	result        SearchResult
-	currentColumn string
+	currentColumn int
 }
 
 func (s *sortableResult) Len() int {
@@ -17,21 +22,25 @@ func (s *sortableResult) Swap(i, j int) {
 }
 
 func (s *sortableResult) Less(i, j int) bool {
-	return s.result[i][s.currentColumn] < s.result[j][s.currentColumn]
+	return s.result[i][s.columns[s.currentColumn]] < s.result[j][s.columns[s.currentColumn]]
 }
 
-type repeatableSort interface {
-	changeColumn(c string)
-}
-
-func (s *sortableResult) changeColumn(c string) {
-	s.currentColumn = c
-}
-
-func newSortableResult(result SearchResult, columns []string) repeatableSort {
-	return &sortableResult{
-		columns:       columns,
-		result:        result,
-		currentColumn: columns[0],
+func sortResults(result SearchResult, orderBy syntaxStructure.OrderBy) SearchResult {
+	ssColumns := orderBy.Columns()
+	columns := make([]string, len(ssColumns))
+	for _, c := range ssColumns {
+		columns = append(columns, c.Column())
 	}
+
+	sr := &sortableResult{
+		columns: columns,
+		result:  result,
+	}
+
+	for i, _ := range columns {
+		sr.currentColumn = i
+		sort.Sort(sr)
+	}
+
+	return sr.result
 }
