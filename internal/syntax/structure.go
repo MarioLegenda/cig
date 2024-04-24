@@ -50,12 +50,12 @@ func NewStructure(sql string) pkg.Result[Structure] {
 	for i, c := range metadata.SelectedColumns {
 		columns[i] = c.Column
 	}
-	
+
 	t := structure{
 		column:      syntaxStructure.NewColumn(columns),
 		fileDb:      syntaxStructure.NewFileDB(metadata.FilePath, metadata.Alias),
 		condition:   resolveWhereClause(metadata.Conditions),
-		constraints: resolveConstraints(metadata.Limit, metadata.Offset),
+		constraints: resolveConstraints(metadata.Limit, metadata.Offset, metadata.OrderBy),
 	}
 
 	return pkg.NewResult[Structure](t, nil)
@@ -120,9 +120,11 @@ func resolveWhereClause(conditions []validation.Condition) syntaxStructure.Condi
 	return head
 }
 
-func resolveConstraints(l int64, o int64) syntaxStructure.StructureConstraints {
+func resolveConstraints(l int64, o int64, ob *validation.OrderBy) syntaxStructure.StructureConstraints {
 	var limit syntaxStructure.Constraint[int64]
 	var offset syntaxStructure.Constraint[int64]
+	var orderBy syntaxStructure.OrderBy
+
 	if l != -1 {
 		limit = syntaxStructure.NewLimit(l)
 	}
@@ -131,5 +133,14 @@ func resolveConstraints(l int64, o int64) syntaxStructure.StructureConstraints {
 		offset = syntaxStructure.NewOffset(o)
 	}
 
-	return syntaxStructure.NewConstraints(limit, offset)
+	if ob != nil {
+		mapping := make(map[string]string)
+		for _, c := range ob.Columns {
+			mapping[c.Column] = c.Alias
+		}
+
+		orderBy = syntaxStructure.NewOrderBy(mapping, ob.Direction)
+	}
+
+	return syntaxStructure.NewConstraints(limit, offset, orderBy)
 }

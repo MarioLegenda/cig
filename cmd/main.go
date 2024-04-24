@@ -50,7 +50,7 @@ func tryCig() {
 
 				`*/
 
-	sql := "SELECT * FROM path:../testdata/example.csv AS e offset 10000"
+	sql := "SELECT 'e.Year' FROM path:../testdata/example.csv AS e limit     50     ORDER BY 'e.Year'   "
 
 	c := cig.New()
 
