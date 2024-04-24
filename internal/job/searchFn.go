@@ -54,6 +54,7 @@ func SearchFactory(selectedColumns selectedColumnMetadata.ColumnMetadata, metada
 					if orderBy != nil {
 						sortResults(results, orderBy)
 					}
+
 					return pkg.NewResult[SearchResult](results, nil)
 				}
 

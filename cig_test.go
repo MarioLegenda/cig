@@ -18,7 +18,7 @@ func TestGettingAllResults(t *testing.T) {
 
 	foundResults := res.Result()
 
-	assert.Equal(t, 20858, len(foundResults))
+	assert.Equal(t, 41716, len(foundResults))
 }
 
 func TestGettingResultsWithSingleWhereClause(t *testing.T) {
@@ -31,7 +31,7 @@ func TestGettingResultsWithSingleWhereClause(t *testing.T) {
 
 	foundResults := res.Result()
 
-	assert.Equal(t, 2511, len(foundResults))
+	assert.Equal(t, 5031, len(foundResults))
 }
 
 func TestGettingResultsWithDataConversion(t *testing.T) {
@@ -44,7 +44,7 @@ func TestGettingResultsWithDataConversion(t *testing.T) {
 
 	foundResults := res.Result()
 
-	assert.Equal(t, 18540, len(foundResults))
+	assert.Equal(t, 37080, len(foundResults))
 }
 
 func TestGettingResultsOfASingleSelectedColumn(t *testing.T) {
@@ -62,7 +62,7 @@ func TestGettingResultsOfASingleSelectedColumn(t *testing.T) {
 		assert.Contains(t, singleResult, "Year")
 	}
 
-	assert.Equal(t, 18540, len(foundResults))
+	assert.Equal(t, 37080, len(foundResults))
 }
 
 func TestGettingResultsOfMultipleSelectedColumn(t *testing.T) {
@@ -86,7 +86,7 @@ func TestGettingResultsOfMultipleSelectedColumn(t *testing.T) {
 		assert.NotEmpty(t, singleResult["Industry_code_NZSIOC"])
 	}
 
-	assert.Equal(t, 18540, len(foundResults))
+	assert.Equal(t, 37080, len(foundResults))
 }
 
 func TestGettingResultsWithLimit(t *testing.T) {
@@ -123,7 +123,7 @@ func TestGettingResultsWithOffset(t *testing.T) {
 
 	foundResults := res.Result()
 
-	assert.Equal(t, 10858, len(foundResults))
+	assert.Equal(t, 31716, len(foundResults))
 }
 
 func TestParallelRun(t *testing.T) {
