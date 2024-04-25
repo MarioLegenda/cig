@@ -21,7 +21,6 @@ type db struct {
 
 type DB interface {
 	Run(s syntax.Structure) pkg.Result[job2.SearchResult]
-	Close() pkg.Result[any]
 }
 
 func (d *db) Run(s syntax.Structure) pkg.Result[job2.SearchResult] {
@@ -45,10 +44,6 @@ func (d *db) Run(s syntax.Structure) pkg.Result[job2.SearchResult] {
 	}
 
 	return job2.SearchFactory(selectedColumns, conditionColumnMetadata, s.Condition(), s.Constraints(), fileHandler)(0, ctx)
-}
-
-func (d *db) Close() pkg.Result[any] {
-	return pkg.NewResult[any](nil, nil)
 }
 
 func New() DB {
