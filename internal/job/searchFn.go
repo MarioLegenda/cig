@@ -20,6 +20,11 @@ func SearchFactory(
 	return func(id int, ctx context.Context) (SearchResult, error) {
 		results := make(SearchResult, 0)
 		lineReader := fs.NewLineReader(f)
+		// skip the column row (first row)
+		_, err := lineReader()
+		if err != nil {
+			return nil, fmt.Errorf("Error in job %d while reading file. Trying to skip the first row but failed: %w", id, err)
+		}
 		limit := constraints.Limit()
 		offset := constraints.Offset()
 		orderBy := constraints.OrderBy()
