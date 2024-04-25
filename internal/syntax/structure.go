@@ -43,7 +43,7 @@ func NewStructure(sql string) pkg.Result[Structure] {
 	tokens := tokenizer.Tokenize(sql)
 	metadata, err := validation.ValidateAndCreateMetadata(tokens)
 	if err != nil {
-		return pkg.NewResult[Structure](nil, []error{err})
+		return pkg.NewResult[Structure](nil, err)
 	}
 
 	columns := make([]string, len(metadata.SelectedColumns))
