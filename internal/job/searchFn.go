@@ -7,14 +7,19 @@ import (
 	"github.com/MarioLegenda/cig/internal/db/fs"
 	"github.com/MarioLegenda/cig/internal/db/selectedColumnMetadata"
 	"github.com/MarioLegenda/cig/internal/syntax/syntaxStructure"
-	"github.com/MarioLegenda/cig/pkg"
 	"io"
 )
 
-func SearchFactory(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata conditionResolver.ColumnMetadata, condition syntaxStructure.Condition, constraints syntaxStructure.StructureConstraints, f io.ReadCloser) SearchFn {
-	return func(id int, ctx context.Context) pkg.Result[SearchResult] {
+func SearchFactory(
+	selectedColumns selectedColumnMetadata.ColumnMetadata,
+	metadata conditionResolver.ColumnMetadata,
+	condition syntaxStructure.Condition,
+	constraints syntaxStructure.StructureConstraints,
+	f io.ReadCloser,
+) SearchFn {
+	return func(id int, ctx context.Context) (SearchResult, error) {
 		results := make(SearchResult, 0)
-		lineReader := fs.NewLineReader(f, true)
+		lineReader := fs.NewLineReader(f)
 		limit := constraints.Limit()
 		offset := constraints.Offset()
 		orderBy := constraints.OrderBy()
@@ -26,14 +31,12 @@ func SearchFactory(selectedColumns selectedColumnMetadata.ColumnMetadata, metada
 			select {
 			case <-ctx.Done():
 				if ctx.Err() == context.DeadlineExceeded {
-					return pkg.NewResult[SearchResult](results, nil)
+					return results, nil
 				}
 			default:
 				lines, err := lineReader()
 				if err != nil {
-					return pkg.NewResult[SearchResult](nil, []error{
-						fmt.Errorf("Error in job %d while reading from the file: %w", id, err),
-					})
+					return nil, fmt.Errorf("Error in job %d while reading from the file: %w", id, err)
 				}
 
 				if len(lines) == 0 {
@@ -41,7 +44,7 @@ func SearchFactory(selectedColumns selectedColumnMetadata.ColumnMetadata, metada
 						sortResults(results, orderBy)
 					}
 
-					return pkg.NewResult[SearchResult](results, nil)
+					return results, nil
 				}
 
 				if offset != nil && currentCollectedOffset < offset.Value() {
@@ -55,23 +58,19 @@ func SearchFactory(selectedColumns selectedColumnMetadata.ColumnMetadata, metada
 						sortResults(results, orderBy)
 					}
 
-					return pkg.NewResult[SearchResult](results, nil)
+					return results, nil
 				}
 
 				if condition != nil {
 					ok, err := conditionResolver.ResolveCondition(condition, metadata, lines)
 					if err != nil {
-						return pkg.NewResult[SearchResult](nil, []error{
-							fmt.Errorf("Error in job %d while reading from the file: %w", id, err),
-						})
+						return nil, fmt.Errorf("Error in job %d while reading from the file: %w", id, err)
 					}
 
 					if ok {
 						res, err := createResult(lines, selectedColumns)
 						if err != nil {
-							return pkg.NewResult[SearchResult](nil, []error{
-								fmt.Errorf("Error in job %d while reading from the file: %w", id, err),
-							})
+							return nil, fmt.Errorf("Error in job %d while reading from the file: %w", id, err)
 						}
 
 						if limit != nil {
@@ -83,9 +82,7 @@ func SearchFactory(selectedColumns selectedColumnMetadata.ColumnMetadata, metada
 				} else {
 					res, err := createResult(lines, selectedColumns)
 					if err != nil {
-						return pkg.NewResult[SearchResult](nil, []error{
-							fmt.Errorf("Error in job %d while reading from the file: %w", id, err),
-						})
+						return nil, fmt.Errorf("Error in job %d while reading from the file: %w", id, err)
 					}
 
 					if limit != nil {
@@ -97,4 +94,19 @@ func SearchFactory(selectedColumns selectedColumnMetadata.ColumnMetadata, metada
 			}
 		}
 	}
+}
+
+func createResult(lines []string, selectedColumns selectedColumnMetadata.ColumnMetadata) (map[string]string, error) {
+	res := make(map[string]string)
+	for linePosition, line := range lines {
+		if selectedColumns.HasPosition(linePosition) {
+			columnName := selectedColumns.Column(linePosition)
+			if columnName == "" {
+				return nil, fmt.Errorf("Column not found for position %d. This should not happen and is a bug", linePosition)
+			}
+			res[columnName] = line
+		}
+	}
+
+	return res, nil
 }

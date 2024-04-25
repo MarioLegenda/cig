@@ -31,7 +31,7 @@ func openFile(f string) (io.ReadCloser, error) {
 }
 
 func readColumns(f io.Reader) (metadataColumns, error) {
-	lineReader := fs.NewLineReader(f, false)
+	lineReader := fs.NewLineReader(f)
 	cls, err := lineReader()
 	if err != nil {
 		return nil, err

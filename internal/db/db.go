@@ -6,7 +6,6 @@ import (
 	"github.com/MarioLegenda/cig/internal/db/selectedColumnMetadata"
 	job2 "github.com/MarioLegenda/cig/internal/job"
 	"github.com/MarioLegenda/cig/internal/syntax"
-	"github.com/MarioLegenda/cig/pkg"
 	"time"
 )
 
@@ -20,18 +19,15 @@ type db struct {
 }
 
 type DB interface {
-	Run(s syntax.Structure) pkg.Result[job2.SearchResult]
-	Close() pkg.Result[any]
+	Run(s syntax.Structure) (job2.SearchResult, error)
 }
 
-func (d *db) Run(s syntax.Structure) pkg.Result[job2.SearchResult] {
+func (d *db) Run(s syntax.Structure) (job2.SearchResult, error) {
 	file := s.FileDB()
-	errs := make([]error, 0)
 
 	fileHandler, err := prepareRun(file, d)
 	if err != nil {
-		errs = append(errs, err)
-		return pkg.NewResult[job2.SearchResult](nil, errs)
+		return nil, err
 	}
 
 	conditionColumnMetadata := createConditionColumnMetadata(d.files[file.Alias()])
@@ -45,10 +41,6 @@ func (d *db) Run(s syntax.Structure) pkg.Result[job2.SearchResult] {
 	}
 
 	return job2.SearchFactory(selectedColumns, conditionColumnMetadata, s.Condition(), s.Constraints(), fileHandler)(0, ctx)
-}
-
-func (d *db) Close() pkg.Result[any] {
-	return pkg.NewResult[any](nil, nil)
 }
 
 func New() DB {
