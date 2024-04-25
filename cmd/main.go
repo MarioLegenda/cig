@@ -3,125 +3,66 @@ package main
 import (
 	"fmt"
 	"github.com/MarioLegenda/cig"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/spf13/cobra"
+	"os"
+	"strings"
 )
 
-func main() {
-	tryCig()
-	/*	f, err := os.Open("../testdata/example.csv")
+var rootCmd = &cobra.Command{
+	Use:   "cig",
+	Short: "cig allows you to query CSV file with SQL syntax",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c := cig.New()
+
+		result, err := c.Run(strings.Join(args, ""))
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
-		lineReader1 := NewLineReader(f, false)
-		fmt.Println(lineReader1())
-		fmt.Println(lineReader1())
-		fmt.Println(lineReader1())
-		fmt.Println(lineReader1())
-		fmt.Println(lineReader1())*/
-}
-
-func tryCig() {
-	/*	sql := `
-
-
-		SELECT
-
-
-
-		    'e.Year'
-		     ,    'e.Industry_aggregation_NZSIOC'
-				FROM
-				    path:../testdata/example.csv   			AS			     e
-				WHERE 				'e.Year'::int
-
-
-				    >
-
-
-				                       '2013'
-
-
-
-
-
-
-
-
-
-				`*/
-
-	sql := "SELECT 'e.Year' FROM path:../testdata/example.csv AS e limit     50     ORDER BY 'e.Year'   "
-
-	c := cig.New()
-
-	result := c.Run(sql)
-
-	fmt.Println(result.Errors(), len(result.Errors()))
-
-	fmt.Println(len(result.Result()))
-	//fmt.Println(result.Result())
-
-}
-
-func validateAndParse(sql string) []string {
-
-	tokens := make([]string, 0)
-	buf := make([]byte, 0)
-	i := 0
-	for i < len(sql) {
-		b := sql[i]
-
-		if b == 10 || b == 9 || b == 32 {
-			i++
-			continue
+		if len(result) == 0 {
+			fmt.Println("")
+			fmt.Println("Empty result returned. Nothing found.")
+			fmt.Println("")
+			return nil
 		}
 
-		quoteMode := false
-		for i < len(sql) {
-			b = sql[i]
-
-			if b == 39 && !quoteMode {
-				quoteMode = true
-			} else if b == 39 && quoteMode {
-				quoteMode = false
-			}
-
-			if quoteMode {
-				buf = append(buf, b)
-				i++
-				continue
-			}
-
-			if !quoteMode && b == 44 {
-				if len(buf) != 0 {
-					tokens = append(tokens, string(buf))
+		keys := make(table.Row, 0)
+		rows := make([]table.Row, 0)
+		for _, res := range result {
+			if len(keys) == 0 {
+				for key, _ := range res {
+					keys = append(keys, key)
 				}
 
-				tokens = append(tokens, ",")
-				buf = make([]byte, 0)
-				i++
-				break
-			}
-
-			if b != 10 && b != 9 && b != 32 {
-				buf = append(buf, b)
-				i++
 				continue
 			}
 
-			if len(buf) != 0 {
-				break
+			values := make(table.Row, len(res))
+			i := 0
+			for _, key := range keys {
+				val := res[key.(string)]
+				values[i] = val
+				i++
 			}
+
+			rows = append(rows, values)
 		}
 
-		if len(buf) != 0 {
-			tokens = append(tokens, string(buf))
-		}
+		t := table.NewWriter()
+		t.SetPageSize(100)
+		t.SetOutputMirror(os.Stdout)
+		t.AppendHeader(keys)
+		t.AppendRows(rows)
+		t.Render()
 
-		buf = make([]byte, 0)
+		return nil
+	},
+}
 
-		return append(tokens, validateAndParse(sql[i:])...)
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
-
-	return tokens
 }
