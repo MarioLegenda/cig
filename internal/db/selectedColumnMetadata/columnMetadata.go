@@ -7,7 +7,12 @@ type columnMetadata struct {
 
 type ColumnMetadata interface {
 	Column(pos int) string
+	Names() []string
 	HasPosition(pos int) bool
+}
+
+func (cm columnMetadata) Names() []string {
+	return cm.names
 }
 
 func (cm columnMetadata) Column(pos int) string {

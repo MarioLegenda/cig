@@ -24,14 +24,9 @@ func (c cig) Run(sql string) Data {
 		return newData(nil, nil, nil, err)
 	}
 
-	fsDb := db.New()
-	dbResult, err := fsDb.Run(res)
+	data := db.New().Run(res)
 
-	if err != nil {
-		return newData(nil, nil, nil, err)
-	}
-
-	return newData(nil, nil, dbResult, nil)
+	return newData(data.SelectedColumns, data.AllColumns, data.Data, data.Error)
 }
 
 func New() Cig {
