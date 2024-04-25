@@ -6,7 +6,6 @@ import (
 	"github.com/MarioLegenda/cig/internal/db/selectedColumnMetadata"
 	job2 "github.com/MarioLegenda/cig/internal/job"
 	"github.com/MarioLegenda/cig/internal/syntax"
-	"github.com/MarioLegenda/cig/pkg"
 	"time"
 )
 
@@ -20,17 +19,27 @@ type db struct {
 }
 
 type DB interface {
-	Run(s syntax.Structure) pkg.Result[job2.SearchResult]
+	Run(s syntax.Structure) Data
 }
 
-func (d *db) Run(s syntax.Structure) pkg.Result[job2.SearchResult] {
+type Data struct {
+	Data            []map[string]string
+	SelectedColumns []string
+	Error           error
+}
+
+func (d *db) Run(s syntax.Structure) Data {
 	file := s.FileDB()
 	errs := make([]error, 0)
 
 	fileHandler, err := prepareRun(file, d)
 	if err != nil {
 		errs = append(errs, err)
-		return pkg.NewResult[job2.SearchResult](nil, errs)
+		return Data{
+			Data:            nil,
+			SelectedColumns: nil,
+			Error:           err,
+		}
 	}
 
 	conditionColumnMetadata := createConditionColumnMetadata(d.files[file.Alias()])
@@ -40,10 +49,22 @@ func (d *db) Run(s syntax.Structure) pkg.Result[job2.SearchResult] {
 	defer cancel()
 
 	if s.Condition() != nil {
-		return job2.SearchFactory(selectedColumns, conditionColumnMetadata, s.Condition(), s.Constraints(), fileHandler)(0, ctx)
+		result := job2.SearchFactory(selectedColumns, conditionColumnMetadata, s.Condition(), s.Constraints(), fileHandler)(0, ctx)
+
+		return Data{
+			Data:            result.Result(),
+			SelectedColumns: d.files[file.Alias()].columns.names(),
+			Error:           result.Error(),
+		}
 	}
 
-	return job2.SearchFactory(selectedColumns, conditionColumnMetadata, s.Condition(), s.Constraints(), fileHandler)(0, ctx)
+	result := job2.SearchFactory(selectedColumns, conditionColumnMetadata, s.Condition(), s.Constraints(), fileHandler)(0, ctx)
+
+	return Data{
+		Data:            result.Result(),
+		SelectedColumns: d.files[file.Alias()].columns.names(),
+		Error:           result.Error(),
+	}
 }
 
 func New() DB {
@@ -63,5 +84,5 @@ func createConditionColumnMetadata(fsMetadata fileMetadata) conditionResolver.Co
 }
 
 func createSelectedColumnMetadata(structure syntax.Structure, fsMetadata fileMetadata) selectedColumnMetadata.ColumnMetadata {
-	return selectedColumnMetadata.New(structure.Column().Columns(), fsMetadata.columns.Names())
+	return selectedColumnMetadata.New(structure.Column().Columns(), fsMetadata.columns.names())
 }

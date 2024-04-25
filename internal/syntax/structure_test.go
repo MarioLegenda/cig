@@ -13,8 +13,7 @@ func TestStructureValid(t *testing.T) {
 
 	res := NewStructure(sql)
 
-	assert.Equal(t, false, res.HasErrors())
-	assert.Nil(t, res.Errors())
+	assert.Nil(t, res.Error())
 
 	condition := res.Result().Condition()
 
@@ -33,8 +32,7 @@ func TestStructureWithMultipleConditions(t *testing.T) {
 
 	res := NewStructure(sql)
 
-	assert.Equal(t, false, res.HasErrors())
-	assert.Nil(t, res.Errors())
+	assert.Nil(t, res.Error())
 
 	assert.True(t, res.Result().Column().HasColumn("Industry_aggregation_NZSIOC"))
 	assert.True(t, res.Result().Column().HasColumn("Year"))
@@ -86,8 +84,7 @@ func TestLimitConstraintValid(t *testing.T) {
 
 	res := NewStructure(sql)
 
-	assert.Equal(t, false, res.HasErrors())
-	assert.Nil(t, res.Errors())
+	assert.Nil(t, res.Error())
 
 	assert.NotNil(t, res.Result().Constraints())
 	assert.NotNil(t, res.Result().Constraints().Limit())
@@ -111,8 +108,7 @@ func TestOffsetConstraintValid(t *testing.T) {
 
 	res := NewStructure(sql)
 
-	assert.Equal(t, false, res.HasErrors())
-	assert.Nil(t, res.Errors())
+	assert.Nil(t, res.Error())
 
 	assert.NotNil(t, res.Result().Constraints())
 	assert.Nil(t, res.Result().Constraints().Limit())
@@ -136,8 +132,7 @@ func TestAllConstraintValid(t *testing.T) {
 
 	res := NewStructure(sql)
 
-	assert.Equal(t, false, res.HasErrors())
-	assert.Nil(t, res.Errors())
+	assert.Nil(t, res.Error())
 
 	assert.NotNil(t, res.Result().Constraints())
 	assert.NotNil(t, res.Result().Constraints().Limit())

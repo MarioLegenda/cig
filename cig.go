@@ -13,18 +13,18 @@ type cig struct{}
 
 func (c cig) Run(sql string) ([]map[string]string, error) {
 	res := syntax.NewStructure(sql)
-	if res.Errors() != nil {
-		return nil, res.Errors()[0]
+	if res.Error() != nil {
+		return nil, res.Error()
 	}
 
 	fsDb := db.New()
 	dbResult := fsDb.Run(res.Result())
 
-	if dbResult.Errors() != nil {
-		return nil, dbResult.Errors()[0]
+	if dbResult.Error != nil {
+		return nil, dbResult.Error
 	}
 
-	return dbResult.Result(), nil
+	return dbResult.Data, nil
 }
 
 func New() Cig {

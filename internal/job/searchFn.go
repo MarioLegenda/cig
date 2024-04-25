@@ -11,7 +11,13 @@ import (
 	"io"
 )
 
-func SearchFactory(selectedColumns selectedColumnMetadata.ColumnMetadata, metadata conditionResolver.ColumnMetadata, condition syntaxStructure.Condition, constraints syntaxStructure.StructureConstraints, f io.ReadCloser) SearchFn {
+func SearchFactory(
+	selectedColumns selectedColumnMetadata.ColumnMetadata,
+	metadata conditionResolver.ColumnMetadata,
+	condition syntaxStructure.Condition,
+	constraints syntaxStructure.StructureConstraints,
+	f io.ReadCloser,
+) SearchFn {
 	return func(id int, ctx context.Context) pkg.Result[SearchResult] {
 		results := make(SearchResult, 0)
 		lineReader := fs.NewLineReader(f, true)
