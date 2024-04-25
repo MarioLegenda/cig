@@ -12,7 +12,7 @@ func TestGettingAllResults(t *testing.T) {
 	data := c.Run("SELECT * FROM path:testdata/example.csv AS e")
 
 	assert.Nil(t, data.Error)
-	assert.Equal(t, 41716, len(data.Data))
+	assert.Equal(t, 41715, len(data.Data))
 }
 
 func TestGettingResultsWithSingleWhereClause(t *testing.T) {
@@ -100,7 +100,7 @@ func TestGettingResultsWithOffset(t *testing.T) {
 	res := c.Run("SELECT * FROM path:testdata/example.csv AS e OFFSET 10000")
 
 	assert.Nil(t, res.Error)
-	assert.Equal(t, 31716, len(res.Data))
+	assert.Equal(t, 31715, len(res.Data))
 }
 
 func TestParallelRun(t *testing.T) {

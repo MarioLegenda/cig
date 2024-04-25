@@ -28,21 +28,17 @@ var rootCmd = &cobra.Command{
 			return nil
 		}
 
-		keys := make(table.Row, 0)
+		columns := make(table.Row, len(data.SelectedColumns))
+		for i, c := range data.SelectedColumns {
+			columns[i] = c
+		}
+
 		rows := make([]table.Row, 0)
 		for _, res := range result {
-			if len(keys) == 0 {
-				for key, _ := range res {
-					keys = append(keys, key)
-				}
-
-				continue
-			}
-
 			values := make(table.Row, len(res))
 			i := 0
-			for _, key := range keys {
-				val := res[key.(string)]
+			for _, column := range data.SelectedColumns {
+				val := res[column]
 				values[i] = val
 				i++
 			}
@@ -53,7 +49,7 @@ var rootCmd = &cobra.Command{
 		t := table.NewWriter()
 		t.SetPageSize(100)
 		t.SetOutputMirror(os.Stdout)
-		t.AppendHeader(keys)
+		t.AppendHeader(columns)
 		t.AppendRows(rows)
 		t.Render()
 

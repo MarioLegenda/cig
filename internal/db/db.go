@@ -6,6 +6,7 @@ import (
 	"github.com/MarioLegenda/cig/internal/db/selectedColumnMetadata"
 	job2 "github.com/MarioLegenda/cig/internal/job"
 	"github.com/MarioLegenda/cig/internal/syntax"
+	"os"
 	"time"
 )
 
@@ -15,11 +16,13 @@ type fileMetadata struct {
 }
 
 type db struct {
-	files map[string]fileMetadata
+	openFs   *os.File
+	metadata fileMetadata
 }
 
 type DB interface {
 	Run(s syntax.Structure) Data
+	Close() error
 }
 
 type Data struct {
@@ -37,7 +40,7 @@ func (d *db) Run(s syntax.Structure) Data {
 		return newData(nil, nil, nil, err)
 	}
 
-	fsMetadata := d.files[file.Alias()]
+	fsMetadata := d.metadata
 	conditionColumnMetadata := createConditionColumnMetadata(fsMetadata)
 	selectedColumns := createSelectedColumnMetadata(s, fsMetadata)
 
@@ -52,8 +55,12 @@ func (d *db) Run(s syntax.Structure) Data {
 	return newData(selectedColumns.Names(), fsMetadata.columns.names(), res, nil)
 }
 
+func (d *db) Close() error {
+	return d.openFs.Close()
+}
+
 func New() DB {
-	return &db{files: make(map[string]fileMetadata)}
+	return &db{}
 }
 
 func createConditionColumnMetadata(fsMetadata fileMetadata) conditionResolver.ColumnMetadata {
