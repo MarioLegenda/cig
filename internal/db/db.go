@@ -6,7 +6,6 @@ import (
 	"github.com/MarioLegenda/cig/internal/db/selectedColumnMetadata"
 	job2 "github.com/MarioLegenda/cig/internal/job"
 	"github.com/MarioLegenda/cig/internal/syntax"
-	"github.com/MarioLegenda/cig/pkg"
 	"time"
 )
 
@@ -31,8 +30,9 @@ func (d *db) Run(s syntax.Structure) (job2.SearchResult, error) {
 		return nil, err
 	}
 
-	conditionColumnMetadata := createConditionColumnMetadata(d.files[file.Alias()])
-	selectedColumns := createSelectedColumnMetadata(s, d.files[file.Alias()])
+	fsMetadata := d.files[file.Alias()]
+	conditionColumnMetadata := createConditionColumnMetadata(fsMetadata)
+	selectedColumns := createSelectedColumnMetadata(s, fsMetadata)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -61,5 +61,5 @@ func createConditionColumnMetadata(fsMetadata fileMetadata) conditionResolver.Co
 }
 
 func createSelectedColumnMetadata(structure syntax.Structure, fsMetadata fileMetadata) selectedColumnMetadata.ColumnMetadata {
-	return selectedColumnMetadata.New(structure.Column().Columns(), fsMetadata.columns.Names())
+	return selectedColumnMetadata.New(structure.Column().Columns(), fsMetadata.columns.names())
 }

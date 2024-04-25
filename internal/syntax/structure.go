@@ -5,7 +5,6 @@ import (
 	"github.com/MarioLegenda/cig/internal/syntax/syntaxStructure"
 	"github.com/MarioLegenda/cig/internal/syntax/tokenizer"
 	"github.com/MarioLegenda/cig/internal/syntax/validation"
-	"github.com/MarioLegenda/cig/pkg"
 	"strings"
 )
 
@@ -39,11 +38,11 @@ func (s structure) Constraints() syntaxStructure.StructureConstraints {
 	return s.constraints
 }
 
-func NewStructure(sql string) pkg.Result[Structure] {
+func NewStructure(sql string) (Structure, error) {
 	tokens := tokenizer.Tokenize(sql)
 	metadata, err := validation.ValidateAndCreateMetadata(tokens)
 	if err != nil {
-		return pkg.NewResult[Structure](nil, err)
+		return nil, err
 	}
 
 	columns := make([]string, len(metadata.SelectedColumns))
@@ -58,7 +57,7 @@ func NewStructure(sql string) pkg.Result[Structure] {
 		constraints: resolveConstraints(metadata.Limit, metadata.Offset, metadata.OrderBy),
 	}
 
-	return pkg.NewResult[Structure](t, nil)
+	return t, nil
 }
 
 func resolveWhereClause(conditions []validation.Condition) syntaxStructure.Condition {

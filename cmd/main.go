@@ -15,11 +15,12 @@ var rootCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := cig.New()
 
-		result, err := c.Run(strings.Join(args, ""))
-		if err != nil {
-			return err
+		data := c.Run(strings.Join(args, ""))
+		if data.Error != nil {
+			return data.Error
 		}
 
+		result := data.Data
 		if len(result) == 0 {
 			fmt.Println("")
 			fmt.Println("Empty result returned. Nothing found.")

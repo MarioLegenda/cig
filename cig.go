@@ -6,27 +6,43 @@ import (
 )
 
 type Cig interface {
-	Run(sql string) ([]map[string]string, error)
+	Run(sql string) Data
 }
 
 type cig struct{}
 
-func (c cig) Run(sql string) ([]map[string]string, error) {
-	res := syntax.NewStructure(sql)
-	if res.Error() != nil {
-		return nil, res.Error()
+type Data struct {
+	SelectedColumns []string
+	AllColumns      []string
+	Error           error
+	Data            []map[string]string
+}
+
+func (c cig) Run(sql string) Data {
+	res, err := syntax.NewStructure(sql)
+	if err != nil {
+		return newData(nil, nil, nil, err)
 	}
 
 	fsDb := db.New()
-	dbResult := fsDb.Run(res.Result())
+	dbResult, err := fsDb.Run(res)
 
-	if dbResult.Error != nil {
-		return nil, dbResult.Error
+	if err != nil {
+		return newData(nil, nil, nil, err)
 	}
 
-	return dbResult.Data, nil
+	return newData(nil, nil, dbResult, nil)
 }
 
 func New() Cig {
 	return cig{}
+}
+
+func newData(selected, all []string, data []map[string]string, err error) Data {
+	return Data{
+		SelectedColumns: selected,
+		AllColumns:      all,
+		Error:           err,
+		Data:            data,
+	}
 }
