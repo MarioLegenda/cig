@@ -2,28 +2,29 @@ package cig
 
 import (
 	"github.com/MarioLegenda/cig/internal/db"
-	"github.com/MarioLegenda/cig/internal/job"
 	"github.com/MarioLegenda/cig/internal/syntax"
-	"github.com/MarioLegenda/cig/pkg"
 )
 
 type Cig interface {
-	Run(sql string) pkg.Result[job.SearchResult]
+	Run(sql string) ([]map[string]string, error)
 }
 
-type cig struct {
-}
+type cig struct{}
 
-func (c cig) Run(sql string) pkg.Result[job.SearchResult] {
+func (c cig) Run(sql string) ([]map[string]string, error) {
 	res := syntax.NewStructure(sql)
-	if res.HasErrors() {
-		return pkg.NewResult[job.SearchResult](nil, res.Errors())
+	if res.Errors() != nil {
+		return nil, res.Errors()[0]
 	}
 
 	fsDb := db.New()
 	dbResult := fsDb.Run(res.Result())
 
-	return pkg.NewResult[job.SearchResult](dbResult.Result(), dbResult.Errors())
+	if dbResult.Errors() != nil {
+		return nil, dbResult.Errors()[0]
+	}
+
+	return dbResult.Result(), nil
 }
 
 func New() Cig {
