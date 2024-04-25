@@ -19,15 +19,22 @@ type db struct {
 }
 
 type DB interface {
-	Run(s syntax.Structure) (job2.SearchResult, error)
+	Run(s syntax.Structure) Data
 }
 
-func (d *db) Run(s syntax.Structure) (job2.SearchResult, error) {
+type Data struct {
+	SelectedColumns []string
+	AllColumns      []string
+	Error           error
+	Data            []map[string]string
+}
+
+func (d *db) Run(s syntax.Structure) Data {
 	file := s.FileDB()
 
 	fileHandler, err := prepareRun(file, d)
 	if err != nil {
-		return nil, err
+		return newData(nil, nil, nil, err)
 	}
 
 	fsMetadata := d.files[file.Alias()]
@@ -37,11 +44,12 @@ func (d *db) Run(s syntax.Structure) (job2.SearchResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	if s.Condition() != nil {
-		return job2.SearchFactory(selectedColumns, conditionColumnMetadata, s.Condition(), s.Constraints(), fileHandler)(0, ctx)
+	res, err := job2.SearchFactory(selectedColumns, conditionColumnMetadata, s.Condition(), s.Constraints(), fileHandler)(0, ctx)
+	if err != nil {
+		return newData(selectedColumns.Names(), fsMetadata.columns.names(), nil, err)
 	}
 
-	return job2.SearchFactory(selectedColumns, conditionColumnMetadata, s.Condition(), s.Constraints(), fileHandler)(0, ctx)
+	return newData(selectedColumns.Names(), fsMetadata.columns.names(), res, nil)
 }
 
 func New() DB {
@@ -62,4 +70,13 @@ func createConditionColumnMetadata(fsMetadata fileMetadata) conditionResolver.Co
 
 func createSelectedColumnMetadata(structure syntax.Structure, fsMetadata fileMetadata) selectedColumnMetadata.ColumnMetadata {
 	return selectedColumnMetadata.New(structure.Column().Columns(), fsMetadata.columns.names())
+}
+
+func newData(selected, all []string, data []map[string]string, err error) Data {
+	return Data{
+		SelectedColumns: selected,
+		AllColumns:      all,
+		Error:           err,
+		Data:            data,
+	}
 }
