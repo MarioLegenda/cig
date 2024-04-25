@@ -25,6 +25,7 @@ func SearchFactory(
 		if err != nil {
 			return nil, fmt.Errorf("Error in job %d while reading file. Trying to skip the first row but failed: %w", id, err)
 		}
+
 		limit := constraints.Limit()
 		offset := constraints.Offset()
 		orderBy := constraints.OrderBy()
