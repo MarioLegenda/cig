@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-func NewLineReader(f io.Reader, skipColumns bool) func() ([]string, error) {
+func NewLineReader(f io.Reader) func() ([]string, error) {
 	r := csv.NewReader(f)
 
 	return func() ([]string, error) {

@@ -13,7 +13,7 @@ import (
 func TestSingleColumnStringSort(t *testing.T) {
 	c := New()
 
-	sql := "SELECT 'e.Industry_aggregation_NZSIOC' FROM path:testdata/example.csv AS e     ORDER BY 'e.Industry_aggregation_NZSIOC'   "
+	sql := "SELECT 'e.Industry_aggregation_NZSIOC' FROM path:testdata/example.csv AS e     ORDER BY 'e.Industry_aggregation_NZSIOC'  LIMIT 10 "
 
 	res := c.Run(sql)
 
@@ -22,7 +22,7 @@ func TestSingleColumnStringSort(t *testing.T) {
 
 	foundResults := res.Result()
 
-	assert.Equal(t, 41716, len(foundResults))
+	assert.Equal(t, 10, len(foundResults))
 
 	cls, err := collectColumn(1)
 	assert.Nil(t, err)
@@ -35,6 +35,10 @@ func TestSingleColumnStringSort(t *testing.T) {
 	}
 
 	assert.Equal(t, len(cigCls), len(cls))
+
+	for i, fileColumn := range cls {
+		assert.Equal(t, cigCls[i], fileColumn)
+	}
 }
 
 func collectColumn(pos int) ([]string, error) {
