@@ -1,8 +1,6 @@
 package cig
 
 import (
-	"github.com/MarioLegenda/cig/internal/job"
-	"github.com/MarioLegenda/cig/pkg"
 	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
@@ -11,11 +9,10 @@ import (
 func TestGettingAllResults(t *testing.T) {
 	c := New()
 
-	res, err := c.Run("SELECT * FROM path:testdata/example.csv AS e")
+	data := c.Run("SELECT * FROM path:testdata/example.csv AS e")
 
-	assert.Nil(t, err)
-
-	assert.Equal(t, 41716, len(res))
+	assert.Nil(t, data.Error)
+	assert.Equal(t, 41716, len(data.Data))
 }
 
 func TestGettingResultsWithSingleWhereClause(t *testing.T) {
@@ -23,12 +20,8 @@ func TestGettingResultsWithSingleWhereClause(t *testing.T) {
 
 	res := c.Run("SELECT * FROM path:testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC' = 'Level 1' OR 'e.Industry_aggregation_NZSIOC' = 'Level 2' AND 'e.Year'::int = '2021'")
 
-	assert.False(t, res.HasErrors())
-	assert.Equal(t, 0, len(res.Errors()))
-
-	foundResults := res.Result()
-
-	assert.Equal(t, 5031, len(foundResults))
+	assert.Nil(t, res.Error)
+	assert.Equal(t, 5031, len(res.Data))
 }
 
 func TestGettingResultsWithDataConversion(t *testing.T) {
@@ -36,12 +29,8 @@ func TestGettingResultsWithDataConversion(t *testing.T) {
 
 	res := c.Run("SELECT * FROM path:testdata/example.csv AS e WHERE 'e.Year'::int > '2013'")
 
-	assert.False(t, res.HasErrors())
-	assert.Equal(t, 0, len(res.Errors()))
-
-	foundResults := res.Result()
-
-	assert.Equal(t, 37080, len(foundResults))
+	assert.Nil(t, res.Error)
+	assert.Equal(t, 37080, len(res.Data))
 }
 
 func TestGettingResultsOfASingleSelectedColumn(t *testing.T) {
@@ -49,17 +38,14 @@ func TestGettingResultsOfASingleSelectedColumn(t *testing.T) {
 
 	res := c.Run("SELECT 'e.Year' FROM path:testdata/example.csv AS e WHERE 'e.Year'::int > '2013'")
 
-	assert.False(t, res.HasErrors())
-	assert.Equal(t, 0, len(res.Errors()))
+	assert.Nil(t, res.Error)
 
-	foundResults := res.Result()
-
-	for _, singleResult := range foundResults {
+	for _, singleResult := range res.Data {
 		assert.Equal(t, len(singleResult), 1)
 		assert.Contains(t, singleResult, "Year")
 	}
 
-	assert.Equal(t, 37080, len(foundResults))
+	assert.Equal(t, 37080, len(res.Data))
 }
 
 func TestGettingResultsOfMultipleSelectedColumn(t *testing.T) {
@@ -67,10 +53,9 @@ func TestGettingResultsOfMultipleSelectedColumn(t *testing.T) {
 
 	res := c.Run("SELECT 'e.Year','e.Industry_aggregation_NZSIOC','e.Industry_code_NZSIOC' FROM path:testdata/example.csv AS e WHERE 'e.Year'::int > '2013'")
 
-	assert.False(t, res.HasErrors())
-	assert.Equal(t, 0, len(res.Errors()))
+	assert.Nil(t, res.Error)
 
-	foundResults := res.Result()
+	foundResults := res.Data
 
 	for _, singleResult := range foundResults {
 		assert.Equal(t, len(singleResult), 3)
@@ -101,10 +86,9 @@ func TestGettingResultsWithLimit(t *testing.T) {
 	for _, s := range statements {
 		res := c.Run(s)
 
-		assert.False(t, res.HasErrors())
-		assert.Equal(t, 0, len(res.Errors()))
+		assert.Nil(t, res.Error)
 
-		foundResults := res.Result()
+		foundResults := res.Data
 
 		assert.Equal(t, 50, len(foundResults))
 	}
@@ -115,19 +99,15 @@ func TestGettingResultsWithOffset(t *testing.T) {
 
 	res := c.Run("SELECT * FROM path:testdata/example.csv AS e OFFSET 10000")
 
-	assert.False(t, res.HasErrors())
-	assert.Equal(t, 0, len(res.Errors()))
-
-	foundResults := res.Result()
-
-	assert.Equal(t, 31716, len(foundResults))
+	assert.Nil(t, res.Error)
+	assert.Equal(t, 31716, len(res.Data))
 }
 
 func TestParallelRun(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	c := New()
 
-	results := make(chan pkg.Result[job.SearchResult], 10)
+	results := make(chan Data, 10)
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func() {
@@ -140,6 +120,6 @@ func TestParallelRun(t *testing.T) {
 	close(results)
 
 	for res := range results {
-		assert.Nil(t, res.Errors())
+		assert.Nil(t, res.Error)
 	}
 }

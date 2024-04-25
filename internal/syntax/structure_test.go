@@ -11,11 +11,11 @@ import (
 func TestStructureValid(t *testing.T) {
 	sql := "SELECT * FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::string = 'Level 1'"
 
-	res := NewStructure(sql)
+	res, err := NewStructure(sql)
 
-	assert.Nil(t, res.Error())
+	assert.Nil(t, err)
 
-	condition := res.Result().Condition()
+	condition := res.Condition()
 
 	assert.Equal(t, condition.Column().Alias(), "e")
 	assert.Equal(t, condition.Column().Column(), "Industry_aggregation_NZSIOC")
@@ -30,15 +30,15 @@ func TestStructureValid(t *testing.T) {
 func TestStructureWithMultipleConditions(t *testing.T) {
 	sql := "SELECT 'e.Industry_aggregation_NZSIOC','e.Year' FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC' = 'Level 1' AND 'e.Year'::int != '2021' OR 'e.Industry_aggregation_NZSIOC' = 'Level 3' OR 'e.Variable_code'::string <= 'some value'"
 
-	res := NewStructure(sql)
+	res, err := NewStructure(sql)
 
-	assert.Nil(t, res.Error())
+	assert.Nil(t, err)
 
-	assert.True(t, res.Result().Column().HasColumn("Industry_aggregation_NZSIOC"))
-	assert.True(t, res.Result().Column().HasColumn("Year"))
-	assert.Equal(t, len(res.Result().Column().Columns()), 2)
+	assert.True(t, res.Column().HasColumn("Industry_aggregation_NZSIOC"))
+	assert.True(t, res.Column().HasColumn("Year"))
+	assert.Equal(t, len(res.Column().Columns()), 2)
 
-	head := res.Result().Condition()
+	head := res.Condition()
 	assert.Equal(t, head.Column().Alias(), "e")
 	assert.Equal(t, head.Column().Column(), "Industry_aggregation_NZSIOC")
 	assert.Equal(t, head.Column().DataType(), "")
@@ -82,16 +82,16 @@ func TestStructureWithMultipleConditions(t *testing.T) {
 func TestLimitConstraintValid(t *testing.T) {
 	sql := "SELECT * FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::string = 'Level 1' LIMIT 10"
 
-	res := NewStructure(sql)
+	res, err := NewStructure(sql)
 
-	assert.Nil(t, res.Error())
+	assert.Nil(t, err)
 
-	assert.NotNil(t, res.Result().Constraints())
-	assert.NotNil(t, res.Result().Constraints().Limit())
-	assert.Equal(t, res.Result().Constraints().Limit().Value(), int64(10))
-	assert.Nil(t, res.Result().Constraints().Offset())
+	assert.NotNil(t, res.Constraints())
+	assert.NotNil(t, res.Constraints().Limit())
+	assert.Equal(t, res.Constraints().Limit().Value(), int64(10))
+	assert.Nil(t, res.Constraints().Offset())
 
-	condition := res.Result().Condition()
+	condition := res.Condition()
 
 	assert.Equal(t, condition.Column().Alias(), "e")
 	assert.Equal(t, condition.Column().Column(), "Industry_aggregation_NZSIOC")
@@ -106,16 +106,16 @@ func TestLimitConstraintValid(t *testing.T) {
 func TestOffsetConstraintValid(t *testing.T) {
 	sql := "SELECT * FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::string = 'Level 1' Offset 10"
 
-	res := NewStructure(sql)
+	res, err := NewStructure(sql)
 
-	assert.Nil(t, res.Error())
+	assert.Nil(t, err)
 
-	assert.NotNil(t, res.Result().Constraints())
-	assert.Nil(t, res.Result().Constraints().Limit())
-	assert.NotNil(t, res.Result().Constraints().Offset())
-	assert.Equal(t, res.Result().Constraints().Offset().Value(), int64(10))
+	assert.NotNil(t, res.Constraints())
+	assert.Nil(t, res.Constraints().Limit())
+	assert.NotNil(t, res.Constraints().Offset())
+	assert.Equal(t, res.Constraints().Offset().Value(), int64(10))
 
-	condition := res.Result().Condition()
+	condition := res.Condition()
 
 	assert.Equal(t, condition.Column().Alias(), "e")
 	assert.Equal(t, condition.Column().Column(), "Industry_aggregation_NZSIOC")
@@ -130,17 +130,17 @@ func TestOffsetConstraintValid(t *testing.T) {
 func TestAllConstraintValid(t *testing.T) {
 	sql := "SELECT * FROM path:../../testdata/example.csv AS e WHERE 'e.Industry_aggregation_NZSIOC'::string = 'Level 1' Offset 10 LIMIT 45"
 
-	res := NewStructure(sql)
+	res, err := NewStructure(sql)
 
-	assert.Nil(t, res.Error())
+	assert.Nil(t, err)
 
-	assert.NotNil(t, res.Result().Constraints())
-	assert.NotNil(t, res.Result().Constraints().Limit())
-	assert.NotNil(t, res.Result().Constraints().Offset())
-	assert.Equal(t, res.Result().Constraints().Offset().Value(), int64(10))
-	assert.Equal(t, res.Result().Constraints().Limit().Value(), int64(45))
+	assert.NotNil(t, res.Constraints())
+	assert.NotNil(t, res.Constraints().Limit())
+	assert.NotNil(t, res.Constraints().Offset())
+	assert.Equal(t, res.Constraints().Offset().Value(), int64(10))
+	assert.Equal(t, res.Constraints().Limit().Value(), int64(45))
 
-	condition := res.Result().Condition()
+	condition := res.Condition()
 
 	assert.Equal(t, condition.Column().Alias(), "e")
 	assert.Equal(t, condition.Column().Column(), "Industry_aggregation_NZSIOC")
