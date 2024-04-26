@@ -1,46 +1,53 @@
 package job
 
 import (
+	"github.com/MarioLegenda/cig/internal/syntax/operators"
 	"github.com/MarioLegenda/cig/internal/syntax/syntaxStructure"
 	"sort"
 )
 
 type MapResult map[string]string
 
-type sortableResult struct {
-	columns       []string
-	result        SearchResult
-	currentColumn int
+var currentColumn int
+var columns []string
+var direction string
+
+func (s SearchResult) Len() int {
+	return len(s)
 }
 
-func (s *sortableResult) Len() int {
-	return len(s.columns)
+func (s SearchResult) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
 }
 
-func (s *sortableResult) Swap(i, j int) {
-	s.result[i], s.result[j] = s.result[j], s.result[i]
-}
+func (s SearchResult) Less(i, j int) bool {
+	if direction == operators.Asc {
+		return s[i][columns[currentColumn]] < s[j][columns[currentColumn]]
+	}
 
-func (s *sortableResult) Less(i, j int) bool {
-	return s.result[i][s.columns[s.currentColumn]] < s.result[j][s.columns[s.currentColumn]]
+	return s[i][columns[currentColumn]] > s[j][columns[currentColumn]]
 }
 
 func sortResults(result SearchResult, orderBy syntaxStructure.OrderBy) SearchResult {
+	currentColumn = 0
+	columns = make([]string, 0)
+	direction = orderBy.Direction()
+	if direction == "" {
+		direction = operators.Asc
+	}
+
 	ssColumns := orderBy.Columns()
-	columns := make([]string, len(ssColumns))
 	for _, c := range ssColumns {
 		columns = append(columns, c.Column())
 	}
 
-	sr := &sortableResult{
-		columns: columns,
-		result:  result,
-	}
-
 	for i, _ := range columns {
-		sr.currentColumn = i
-		sort.Sort(sr)
+		currentColumn = i
+		sort.Sort(result)
 	}
 
-	return sr.result
+	currentColumn = 0
+	columns = make([]string, 0)
+
+	return result
 }
