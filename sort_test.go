@@ -1,20 +1,14 @@
 package cig
 
 import (
-	"encoding/csv"
-	"errors"
 	"github.com/stretchr/testify/assert"
-	"io"
-	"os"
-	"sort"
 	"testing"
 )
 
 func TestSingleColumnStringSort(t *testing.T) {
-	t.Skip("")
 	c := New()
 
-	sql := "SELECT 'e.Industry_aggregation_NZSIOC' FROM path:testdata/example.csv AS e     ORDER BY 'e.Industry_aggregation_NZSIOC'  LIMIT 10 "
+	sql := "SELECT 'e.Year' FROM path:testdata/example.csv AS e ORDER BY 'e.Year'  LIMIT 10 "
 
 	res := c.Run(sql)
 	assert.Nil(t, res.Error)
@@ -23,43 +17,20 @@ func TestSingleColumnStringSort(t *testing.T) {
 
 	assert.Equal(t, 10, len(foundResults))
 
-	cls, err := collectColumn(1)
-	assert.Nil(t, err)
-
-	sort.Strings(cls)
-
-	cigCls := make([]string, len(foundResults))
-	for i, c := range foundResults {
-		cigCls[i] = c["Industry_aggregation_NZSIOC"]
+	for _, res := range foundResults {
+		assert.Equal(t, res["Year"], "2013")
 	}
 
-	assert.Equal(t, len(cigCls), len(cls))
+	sql = "SELECT 'e.Year' FROM path:testdata/example.csv AS e ORDER BY 'e.Year' DESC  LIMIT 10 "
 
-	for i, fileColumn := range cls {
-		assert.Equal(t, cigCls[i], fileColumn)
-	}
-}
+	res = c.Run(sql)
+	assert.Nil(t, res.Error)
 
-func collectColumn(pos int) ([]string, error) {
-	f, err := os.Open("testdata/example.csv")
-	if err != nil {
-		return nil, err
-	}
+	foundResults = res.Data
 
-	columns := make([]string, 0)
-	r := csv.NewReader(f)
-	defer f.Close()
+	assert.Equal(t, 10, len(foundResults))
 
-	for {
-		b, err := r.Read()
-		if err != nil && !errors.Is(err, io.EOF) {
-			return nil, err
-		}
-
-		if errors.Is(err, io.EOF) {
-			return columns, nil
-		}
-
-		columns = append(columns, b[1])
+	for _, res := range foundResults {
+		assert.Equal(t, res["Year"], "2021")
 	}
 }
