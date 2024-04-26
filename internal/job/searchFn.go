@@ -20,6 +20,7 @@ func SearchFactory(
 	return func(id int, ctx context.Context) (SearchResult, error) {
 		results := make(SearchResult, 0)
 		lineReader := fs.NewLineReader(f)
+		collectedLines := make([][]string, 0)
 		// skip the column row (first row)
 		_, err := lineReader()
 		if err != nil {
@@ -32,7 +33,13 @@ func SearchFactory(
 		var currentCollectedLimit int64
 		var currentCollectedOffset int64
 
+		collectionFinished := false
+
 		for {
+			if collectionFinished {
+				break
+			}
+
 			select {
 			case <-ctx.Done():
 				if ctx.Err() == context.DeadlineExceeded {
@@ -45,11 +52,8 @@ func SearchFactory(
 				}
 
 				if len(lines) == 0 {
-					if orderBy != nil {
-						sortResults(results, orderBy)
-					}
-
-					return results, nil
+					collectionFinished = true
+					break
 				}
 
 				if offset != nil && currentCollectedOffset < offset.Value() {
@@ -59,11 +63,8 @@ func SearchFactory(
 				}
 
 				if limit != nil && currentCollectedLimit == limit.Value() {
-					if orderBy != nil {
-						sortResults(results, orderBy)
-					}
-
-					return results, nil
+					collectionFinished = true
+					break
 				}
 
 				if condition != nil {
@@ -73,31 +74,36 @@ func SearchFactory(
 					}
 
 					if ok {
-						res, err := createResult(lines, selectedColumns)
-						if err != nil {
-							return nil, fmt.Errorf("Error in job %d while reading from the file: %w", id, err)
-						}
-
 						if limit != nil {
 							currentCollectedLimit++
 						}
 
-						results = append(results, res)
+						collectedLines = append(collectedLines, lines)
 					}
 				} else {
-					res, err := createResult(lines, selectedColumns)
-					if err != nil {
-						return nil, fmt.Errorf("Error in job %d while reading from the file: %w", id, err)
-					}
-
 					if limit != nil {
 						currentCollectedLimit++
 					}
 
-					results = append(results, res)
+					collectedLines = append(collectedLines, lines)
 				}
 			}
 		}
+
+		for _, line := range collectedLines {
+			res, err := createResult(line, selectedColumns)
+			if err != nil {
+				return nil, fmt.Errorf("Error in job %d while reading from the file: %w", id, err)
+			}
+
+			results = append(results, res)
+		}
+
+		if orderBy != nil {
+			return sortResults(results, orderBy), nil
+		}
+
+		return results, nil
 	}
 }
 
