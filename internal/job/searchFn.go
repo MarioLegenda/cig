@@ -27,13 +27,6 @@ func SearchFactory(
 			return nil, fmt.Errorf("Error in job %d while reading file. Trying to skip the first row but failed: %w", id, err)
 		}
 
-		limit := constraints.Limit()
-		offset := constraints.Offset()
-		orderBy := constraints.OrderBy()
-
-		var currentCollectedLimit int64
-		var currentCollectedOffset int64
-
 		collectionFinished := false
 
 		for {
@@ -57,51 +50,52 @@ func SearchFactory(
 					break
 				}
 
-				if offset != nil && currentCollectedOffset < offset.Value() {
-					currentCollectedOffset++
-
-					continue
-				}
-
-				if limit != nil && currentCollectedLimit == limit.Value() {
-					collectionFinished = true
-					break
-				}
-
 				if condition != nil {
 					ok, err := conditionResolver.ResolveCondition(condition, metadata, lines)
 					if err != nil {
 						return nil, fmt.Errorf("Error in job %d while reading from the file: %w", id, err)
 					}
 
-					if ok {
-						if limit != nil {
-							currentCollectedLimit++
-						}
+					/*					v, _ := strconv.ParseInt(lines[2], 10, 64)
+										if v < 2023 {
+											fmt.Println(v, ok)
+										}*/
 
+					if ok {
 						collectedLines = append(collectedLines, lines)
 					}
 				} else {
-					if limit != nil {
-						currentCollectedLimit++
-					}
-
 					collectedLines = append(collectedLines, lines)
 				}
 			}
 		}
 
+		limit := constraints.Limit()
+		offset := constraints.Offset()
+		orderBy := constraints.OrderBy()
+
+		if orderBy != nil {
+			sortResults(collectedLines, orderBy, metadata)
+		}
+
+		var currentCollectedOffset int64
+
 		for _, line := range collectedLines {
+			if offset != nil && offset.Value() != currentCollectedOffset {
+				currentCollectedOffset++
+				continue
+			}
+
+			if limit != nil && int64(len(results)) == limit.Value() {
+				break
+			}
+
 			res, err := createResult(line, selectedColumns)
 			if err != nil {
 				return nil, fmt.Errorf("Error in job %d while reading from the file: %w", id, err)
 			}
 
 			results = append(results, res)
-		}
-
-		if orderBy != nil {
-			return sortResults(results, orderBy), nil
 		}
 
 		return results, nil

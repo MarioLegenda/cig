@@ -23,6 +23,9 @@ func ResolveCondition(condition syntaxStructure.Condition, metadata ColumnMetada
 	head := condition
 	var prevOp string
 
+	if head == nil {
+		return false, fmt.Errorf("Invalid condition head. This is internal error and a bug.")
+	}
 	// setup
 	for head != nil {
 		next := head.Next()

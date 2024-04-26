@@ -1,53 +1,49 @@
 package job
 
 import (
+	"github.com/MarioLegenda/cig/internal/db/conditionResolver"
 	"github.com/MarioLegenda/cig/internal/syntax/operators"
 	"github.com/MarioLegenda/cig/internal/syntax/syntaxStructure"
 	"sort"
+	"strconv"
 )
 
-type MapResult map[string]string
+type sortResult [][]string
 
-var currentColumn int
+var currentPosition int
 var columns []string
 var direction string
 
-func (s SearchResult) Len() int {
+func (s sortResult) Len() int {
 	return len(s)
 }
 
-func (s SearchResult) Swap(i, j int) {
+func (s sortResult) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
-func (s SearchResult) Less(i, j int) bool {
+func (s sortResult) Less(i, j int) bool {
+	v1, _ := strconv.ParseInt(s[i][currentPosition], 10, 64)
+	v2, _ := strconv.ParseInt(s[j][currentPosition], 10, 64)
+
 	if direction == operators.Asc {
-		return s[i][columns[currentColumn]] < s[j][columns[currentColumn]]
+		return v1 < v2
 	}
 
-	return s[i][columns[currentColumn]] > s[j][columns[currentColumn]]
+	return v1 > v2
 }
 
-func sortResults(result SearchResult, orderBy syntaxStructure.OrderBy) SearchResult {
-	currentColumn = 0
-	columns = make([]string, 0)
-	direction = orderBy.Direction()
-	if direction == "" {
-		direction = operators.Asc
+func sortResults(result [][]string, orderBy syntaxStructure.OrderBy, metadata conditionResolver.ColumnMetadata) [][]string {
+	direction = operators.Asc
+	if orderBy.Direction() == operators.Desc {
+		direction = orderBy.Direction()
 	}
 
-	ssColumns := orderBy.Columns()
-	for _, c := range ssColumns {
-		columns = append(columns, c.Column())
+	orderByColumns := orderBy.Columns()
+	for _, c := range orderByColumns {
+		currentPosition = metadata.Position(c.Column())
+		sort.Sort(sortResult(result))
 	}
-
-	for i, _ := range columns {
-		currentColumn = i
-		sort.Sort(result)
-	}
-
-	currentColumn = 0
-	columns = make([]string, 0)
 
 	return result
 }
