@@ -41,6 +41,9 @@ func (d *db) Run(s syntax.Structure) Data {
 	}
 
 	fsMetadata := d.metadata
+
+	addFileToConcurrentIndex(fsMetadata.originalPath)
+
 	conditionColumnMetadata := createConditionColumnMetadata(fsMetadata)
 	selectedColumns := createSelectedColumnMetadata(s, fsMetadata)
 
