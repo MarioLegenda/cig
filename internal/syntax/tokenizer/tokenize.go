@@ -54,8 +54,6 @@ func Tokenize(sql string) []string {
 			tokens = append(tokens, string(buf))
 		}
 
-		buf = make([]byte, 0)
-
 		return append(tokens, Tokenize(sql[i:])...)
 	}
 
