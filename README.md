@@ -31,7 +31,7 @@ nothing else will be developed except making it faster and maintainable.
 
 5. This is not a project that should be used in production. Its only use is for simple
 lookups and nothing else. In most situations, it is better to import a csv file into
-a database of your choice. This project is intended and "something interesting to do" for
+a database of your choice. This project is intended as "something interesting to do" for
 me so do not take it too seriously.
 
 6. This package will be concurrency safe. This means that `Run()` method
@@ -63,7 +63,7 @@ SELECT 'g.columnOne', 'g.columnTwo' /** rest of query goes here */
 
 If you don't specify `DESC` or `ASC`, `ASC` is assumed. 
 
-In code, you used it like this:
+In code, you use it like this:
 
 ````go
 package main
@@ -183,4 +183,4 @@ a database of your choice and use it like that.
 - [ ] Implement JOIN with multiple files
 - [ ] Implement options (cache, timeout with context, extremely simple optional indexing on first query execution)
 - [ ] Implement splitting work into multiple goroutines
-- [ ] Implement solutions from one billions row challenge
+- [ ] Implement solutions from one billion rows challenge
