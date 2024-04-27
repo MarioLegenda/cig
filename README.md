@@ -41,7 +41,7 @@ that will not affect using the public API in your code.
 
 # Installation
 
-`go get github.com/MarioLegenda/cig`
+`go get github.com/MarioLegenda/cig@v0.1.1`
 
 # Usage
 
