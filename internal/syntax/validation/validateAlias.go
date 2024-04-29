@@ -1,6 +1,8 @@
 package validation
 
-import "github.com/MarioLegenda/cig/pkg"
+import (
+	"github.com/MarioLegenda/cig/pkg"
+)
 
 func validateAlias(token string) (string, error) {
 	if token == "" {

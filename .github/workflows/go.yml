@@ -23,3 +23,5 @@ jobs:
 
     - name: Test
       run: go clean -testcache && go test -v -race ./...
+    - name: Multiple run
+      run: bash multiple_test.sh

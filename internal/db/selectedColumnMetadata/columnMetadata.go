@@ -7,6 +7,7 @@ type columnMetadata struct {
 
 type ColumnMetadata interface {
 	Column(pos int) string
+	Position(name string) int
 	Names() []string
 	HasPosition(pos int) bool
 }
@@ -23,6 +24,16 @@ func (cm columnMetadata) Column(pos int) string {
 	}
 
 	return ""
+}
+
+func (cm columnMetadata) Position(name string) int {
+	for p, s := range cm.names {
+		if s == name {
+			return cm.positions[p]
+		}
+	}
+
+	return -1
 }
 
 func (cm columnMetadata) HasPosition(pos int) bool {

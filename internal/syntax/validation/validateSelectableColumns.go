@@ -46,7 +46,6 @@ func validSelectableColumns(tokens []string) (int, []SelectableColumn, error) {
 			}
 
 			columnNamesToValidate = append(columnNamesToValidate, splitted[1])
-			columnMode = false
 
 			selectableColumns = append(selectableColumns, SelectableColumn{
 				Alias:    splitted[0],
