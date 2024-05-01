@@ -1,12 +1,17 @@
 package main
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"github.com/MarioLegenda/cig"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
+	"io"
+	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 var rootCmd = &cobra.Command{
@@ -58,8 +63,58 @@ var rootCmd = &cobra.Command{
 }
 
 func main() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+	f, err := os.Open("../testdata/statistics.csv")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	reader := bufio.NewReader(f)
+
+	now := time.Now()
+	for {
+		chunk, err := readChunk(reader)
+
+		if errors.Is(err, io.EOF) {
+			break
+		}
+
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		convertToLines(chunk)
+	}
+	fmt.Println(time.Since(now))
+}
+
+func convertToLines(chunks []byte) [][]string {
+	lines := make([][]string, 0)
+
+	buf := make([]byte, 0)
+
+	for _, chunk := range chunks {
+		if chunk == 10 {
+			str := string(buf)
+			lines = append(lines, strings.Split(str, ","))
+			buf = make([]byte, 0)
+			continue
+		}
+
+		buf = append(buf, chunk)
+	}
+
+	return lines
+}
+
+func readChunk(reader io.Reader) ([]byte, error) {
+	for {
+		buf := make([]byte, 10*1024*1024)
+		_, err := reader.Read(buf)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return buf, nil
 	}
 }

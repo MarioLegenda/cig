@@ -56,11 +56,6 @@ func SearchFactory(
 						return nil, fmt.Errorf("Error in job %d while reading from the file: %w", id, err)
 					}
 
-					/*					v, _ := strconv.ParseInt(lines[2], 10, 64)
-										if v < 2023 {
-											fmt.Println(v, ok)
-										}*/
-
 					if ok {
 						collectedLines = append(collectedLines, lines)
 					}
